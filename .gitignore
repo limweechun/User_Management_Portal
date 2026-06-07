@@ -1,0 +1,14 @@
+# Local agent/editor settings
+.claude/
+
+# Dependencies / build (if ever added)
+node_modules/
+dist/
+
+# Env / secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db

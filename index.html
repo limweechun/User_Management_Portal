@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Management Portal</title>
+    <link rel="stylesheet" href="styles.css?v=9">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="iam-config.js?v=9" defer></script>
+    <script src="iam.js?v=9" defer></script>
+    <script src="iam-api.js?v=9" defer></script>
+    <script src="app.js?v=9" defer></script>
+  </head>
+  <body>
+    <!-- Login -->
+    <div class="overlay" id="loginScreen" hidden>
+      <div class="card">
+        <div class="brand"><span class="brand-mark">IAM</span><div><strong>User Management</strong><small>Workplace Operations · Admin Portal</small></div></div>
+        <h1>Sign in</h1>
+        <p class="muted">Manage accounts, app access and permissions.</p>
+        <form id="loginForm" class="form" novalidate>
+          <label class="field"><span>Email</span><input id="loginEmail" type="email" autocomplete="username" placeholder="you@company.com" required></label>
+          <label class="field"><span>Password</span><input id="loginPass" type="password" autocomplete="current-password" required></label>
+          <p id="loginError" class="error" role="alert" hidden></p>
+          <button class="btn primary block" type="submit"><i data-lucide="log-in"></i><span>Sign in</span></button>
+        </form>
+        <p class="hint">No account? <a href="#" id="toRegister">Create one</a>. Demo: <code>super@liziz.com / super123</code> (super admin), <code>portal@liziz.com / portal123</code> (portal admin), <code>hradmin@liziz.com / hradmin123</code> (HR app admin)</p>
+      </div>
+    </div>
+
+    <!-- Register -->
+    <div class="overlay" id="registerScreen" hidden>
+      <div class="card">
+        <div class="brand"><span class="brand-mark">IAM</span><div><strong>Create account</strong><small>Self sign-up</small></div></div>
+        <h1>Create your account</h1>
+        <p class="muted">After signing up you'll verify your email, then an administrator approves your account and assigns your apps.</p>
+        <form id="registerForm" class="form" novalidate>
+          <label class="field"><span>Full name</span><input id="regName" type="text" required></label>
+          <label class="field"><span>Email</span><input id="regEmail" type="email" autocomplete="email" required></label>
+          <label class="field"><span>Password</span><input id="regPass" type="password" autocomplete="new-password" required></label>
+          <p id="regError" class="error" role="alert" hidden></p>
+          <button class="btn primary block" type="submit"><i data-lucide="user-plus"></i><span>Create account</span></button>
+        </form>
+        <p class="hint"><a href="#" id="toLogin">Back to sign in</a></p>
+      </div>
+    </div>
+
+    <!-- Awaiting approval -->
+    <div class="overlay" id="awaitingScreen" hidden></div>
+
+    <!-- Denied (active but no portal rights) -->
+    <div class="overlay" id="deniedScreen" hidden></div>
+
+    <!-- App launcher (home after the single login) -->
+    <div class="launcher" id="launcherScreen" hidden></div>
+
+    <!-- Portal shell -->
+    <div class="shell" id="shell" hidden>
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">IAM</span><div><strong>User Management</strong><small>Admin Portal</small></div></div>
+        <nav class="nav" id="nav">
+          <button class="nav-item" id="navLauncher" type="button"><i data-lucide="grid-3x3"></i><span>All apps</span></button>
+          <button class="nav-item" data-view="accounts" id="navAccounts" type="button" hidden><i data-lucide="user-check"></i><span>Accounts</span></button>
+          <button class="nav-item" data-view="appsRoles" id="navAppsRoles" type="button" hidden><i data-lucide="layout-grid"></i><span>Apps &amp; Roles</span></button>
+          <button class="nav-item" data-view="companyAccess" id="navCompanyAccess" type="button" hidden><i data-lucide="building-2"></i><span>Company Access</span></button>
+          <button class="nav-item" data-view="companies" id="navCompanies" type="button" hidden><i data-lucide="briefcase"></i><span>Companies</span></button>
+        </nav>
+        <div class="sidebar-foot"><span class="badge role" id="meRoleBadge">--</span></div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="page-head"><h1 id="viewTitle" tabindex="-1">Accounts</h1><p id="viewSub" class="muted"></p></div>
+          <div class="topbar-actions">
+            <div class="user-chip">
+              <span class="avatar" id="meAvatar">--</span>
+              <span class="meta"><strong id="meName">--</strong><small id="meEmail">--</small></span>
+              <button class="btn ghost icon" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out"><i data-lucide="log-out"></i></button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Accounts -->
+        <section id="accountsView" class="view" hidden>
+          <div class="segmented" id="accountsFilter" role="tablist">
+            <button class="is-selected" data-status="pending" type="button">Pending</button>
+            <button data-status="all" type="button">All</button>
+          </div>
+          <div class="table-wrap"><table id="accountsTable" class="grid"></table></div>
+        </section>
+
+        <!-- Apps & Roles (superadmin) -->
+        <section id="appsRolesView" class="view" hidden>
+          <div class="table-wrap"><table id="appsRolesTable" class="grid"></table></div>
+        </section>
+
+        <!-- Company Access (app admins) -->
+        <section id="companyAccessView" class="view" hidden>
+          <div class="app-picker" id="appPicker"></div>
+          <div class="table-wrap"><table id="companyAccessTable" class="grid"></table></div>
+        </section>
+
+        <!-- Companies -->
+        <section id="companiesView" class="view" hidden>
+          <div class="row-actions"><button class="btn primary" id="newCompanyBtn" type="button"><i data-lucide="plus"></i><span>New company</span></button></div>
+          <div id="companiesList" class="cards"></div>
+          <h3 class="subhead">App availability</h3>
+          <p class="muted small">Tick which companies each app's company switcher links to. Unticking removes that company from the app (and any access already granted there).</p>
+          <div class="table-wrap"><table id="appCompanyTable" class="grid"></table></div>
+        </section>
+
+        <p id="toast" class="toast" hidden></p>
+      </main>
+    </div>
+
+    <!-- Entitlement editor drawer -->
+    <div class="drawer-backdrop" id="drawerBackdrop" hidden>
+      <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+        <div class="drawer-head"><h2 id="drawerTitle">Edit</h2><button class="btn ghost icon" id="drawerClose" type="button" aria-label="Close"><i data-lucide="x"></i></button></div>
+        <div class="drawer-body" id="drawerBody"></div>
+      </aside>
+    </div>
+  </body>
+</html>

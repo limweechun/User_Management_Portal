@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Management Portal — Mockup</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <style>
+      :root{--bg:#f5f7f4;--surface:#fff;--surface-soft:#eef4f1;--ink:#17201d;--muted:#66736d;--line:#dce4df;--teal:#0f766e;--teal-dark:#0b4f4a;--green:#427a46;--radius:8px;--shadow:0 18px 40px rgba(24,37,31,.08)}
+      *{box-sizing:border-box}[hidden]{display:none !important}
+      body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+      button,input,select{font:inherit}button{cursor:pointer}.muted{color:var(--muted)}.small{font-size:12px}h1,h2,h3{margin:0}
+      .mock-ribbon{background:#10231f;color:#cdebe0;text-align:center;font-size:12px;font-weight:700;padding:5px;letter-spacing:.04em}
+
+      .btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);font-weight:700}
+      .btn svg{width:18px;height:18px}.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}.btn.ghost{background:transparent}
+      .btn.icon{width:40px;padding:0;justify-content:center}.btn.sm{min-height:32px;padding:0 10px;font-size:13px}
+      .brand{display:flex;align-items:center;gap:12px}
+      .brand-mark{width:44px;height:44px;border-radius:var(--radius);display:grid;place-items:center;background:#d7eadf;color:#0b3b35;font-weight:800;font-size:13px}
+      .brand strong{display:block;font-size:16px}.brand small{display:block;color:var(--muted);margin-top:2px;font-size:12px}
+      .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--teal);color:#fff;font-weight:800;font-size:12px}
+      .user-chip{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+      .user-chip .meta{display:grid;line-height:1.15}.user-chip .meta strong{font-size:13px}.user-chip .meta small{font-size:11px;color:var(--muted)}
+
+      /* Launcher */
+      .launcher{min-height:calc(100vh - 26px);background:radial-gradient(circle at 25% 15%,#1c463f,#10231f 70%);color:#f7fbf8}
+      .launch-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 28px}
+      .launch-top .brand small{color:#b6c7c0}
+      .launch-top .user-chip{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#f7fbf8}
+      .launch-top .user-chip .meta small{color:#b6c7c0}
+      .launch-body{max-width:960px;margin:0 auto;padding:24px 28px 60px}.launch-body h1{font-size:26px;margin:12px 0 20px}
+      .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+      .tile{display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;border:1px solid transparent;box-shadow:var(--shadow);text-align:left}
+      .tile:hover{transform:translateY(-2px);border-color:#88b8ae;transition:transform 120ms ease}
+      .tile-icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--surface-soft);color:var(--teal)}.tile-icon svg{width:24px;height:24px}
+      .tile strong{font-size:17px}.tile-go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;color:var(--teal-dark);font-weight:800;font-size:13px}.tile-go svg{width:16px;height:16px}
+      .tile-admin .tile-icon{background:#f5e9cf;color:#7b4f13}
+
+      /* Shell */
+      .shell{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:calc(100vh - 26px)}
+      .sidebar{position:sticky;top:0;height:calc(100vh - 26px);padding:22px 16px;background:#10231f;color:#f7fbf8;display:flex;flex-direction:column;gap:24px}
+      .sidebar .brand small{color:#b6c7c0}
+      .nav{display:grid;gap:6px}
+      .nav-item{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border:0;border-radius:var(--radius);background:transparent;color:#d8e4df;font-weight:700;text-align:left;width:100%}
+      .nav-item svg{width:18px;height:18px}.nav-item:hover,.nav-item.is-active{background:rgba(255,255,255,.1);color:#fff}
+      .sidebar-foot{margin-top:auto}
+      .badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+      .badge.role{background:rgba(215,234,223,.14);color:#e7f3ee}
+      .badge.ok{background:#dfeedd;color:var(--green)}.badge.off{background:#f2dedb;color:#8b382b}.badge.warn{background:#f5e9cf;color:#7b4f13}
+      .badge.full{background:#d8efeb;color:var(--teal-dark)}.badge.super{background:#f5e9cf;color:#7b4f13;margin-left:6px}
+
+      .main{padding:22px;min-width:0}
+      .topbar{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+      .page-head h1{font-size:24px}.page-head p{margin:4px 0 0;color:var(--muted)}
+      .topbar-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
+      .view{}
+      .segmented{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface);margin-bottom:14px}
+      .segmented button{border:0;border-right:1px solid var(--line);background:transparent;padding:0 16px;min-height:38px;font-weight:800;color:var(--muted)}
+      .segmented button:last-child{border-right:0}.segmented button.is-selected{background:var(--teal);color:#fff}
+      .table-wrap{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow-x:auto}
+      table.grid{width:100%;border-collapse:collapse;min-width:680px}
+      .grid th,.grid td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+      .grid thead th{background:var(--surface-soft);font-size:13px;color:var(--teal-dark);white-space:nowrap}
+      .grid tbody tr:last-child th,.grid tbody tr:last-child td{border-bottom:0}
+      .grid th[scope=row] strong{font-size:14px}.grid th[scope=row] small{display:block;color:var(--muted);font-weight:600;margin-top:2px}
+      .grid .actions{display:flex;gap:6px}
+      .select{height:36px;border:1px solid var(--line);border-radius:var(--radius);padding:0 8px;background:#fbfcfb;color:var(--ink);font-weight:600}.select.sm{min-width:104px}
+      .app-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+      .chip{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:700}.chip svg{width:16px;height:16px}.chip.is-active{background:var(--teal);border-color:var(--teal);color:#fff}
+      .row-actions{margin-bottom:14px}
+      .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+      .company-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px}.company-card h3{margin:8px 0 2px;font-size:16px}.company-card small{color:var(--muted)}
+      .subhead{margin:24px 0 4px;font-size:14px;text-transform:uppercase;letter-spacing:.03em;color:var(--teal-dark)}
+      .cellcheck{display:grid;place-items:center}.cellcheck input{width:18px;height:18px;accent-color:var(--teal);cursor:pointer}
+      #appCompanyTable thead th:not(:first-child),#appCompanyTable td:not(:first-child){text-align:center}
+      .menu{position:relative}
+      .dropdown{position:absolute;top:calc(100% + 8px);right:0;z-index:40;min-width:200px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}
+      .dropdown button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 12px;border:0;border-radius:var(--radius);background:transparent;color:var(--ink);font-weight:600;text-align:left}.dropdown button:hover{background:var(--surface-soft)}.dropdown svg{width:18px;height:18px}
+      @media (max-width:860px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.sidebar-foot{margin:0 0 0 auto}.user-chip .meta{display:none}}
+    </style>
+  </head>
+  <body>
+    <div class="mock-ribbon">STATIC MOCKUP · User Management Portal (central admin for the Workplace Operations suite)</div>
+
+    <!-- Launcher -->
+    <div class="launcher" id="launcher">
+      <header class="launch-top">
+        <div class="brand"><span class="brand-mark">WO</span><div><strong>Workplace Operations</strong><small>Choose an app</small></div></div>
+        <div class="user-chip"><span class="avatar">SA</span><span class="meta"><strong>Super Admin</strong><small>super@liziz.com</small></span><button class="btn ghost icon" title="Sign out"><i data-lucide="log-out"></i></button></div>
+      </header>
+      <div class="launch-body">
+        <h1>Your apps</h1>
+        <div class="tiles">
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="users"></i></span><strong>HR &amp; Admin</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="shopping-cart"></i></span><strong>Procurement</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="package"></i></span><strong>PSM</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="factory"></i></span><strong>Liziz Biogas Plant</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="flask-conical"></i></span><strong>R&amp;D Hub</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <a class="tile" href="#"><span class="tile-icon"><i data-lucide="handshake"></i></span><strong>CRM</strong><span class="tile-go">Open <i data-lucide="arrow-right"></i></span></a>
+          <button class="tile tile-admin" id="tileAdmin"><span class="tile-icon"><i data-lucide="shield"></i></span><strong>User Management</strong><span class="tile-go">Manage <i data-lucide="arrow-right"></i></span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin shell -->
+    <div class="shell" id="shell" hidden>
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">IAM</span><div><strong>User Management</strong><small>Admin Portal</small></div></div>
+        <nav class="nav">
+          <button class="nav-item" data-view="launcher"><i data-lucide="grid-3x3"></i><span>All apps</span></button>
+          <button class="nav-item is-active" data-view="accounts"><i data-lucide="user-check"></i><span>Accounts</span></button>
+          <button class="nav-item" data-view="appsRoles"><i data-lucide="layout-grid"></i><span>Apps &amp; Roles</span></button>
+          <button class="nav-item" data-view="companyAccess"><i data-lucide="building-2"></i><span>Company Access</span></button>
+          <button class="nav-item" data-view="companies"><i data-lucide="briefcase"></i><span>Companies</span></button>
+        </nav>
+        <div class="sidebar-foot"><span class="badge role">Super Admin</span></div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="page-head"><h1 id="viewTitle">Accounts</h1><p id="viewSub" class="muted"></p></div>
+          <div class="topbar-actions">
+            <div class="menu" id="userMenu">
+              <button class="user-chip" id="userToggle"><span class="avatar">SA</span><span class="meta"><strong>Super Admin</strong><small>super@liziz.com</small></span><i data-lucide="chevron-down"></i></button>
+              <div class="dropdown" hidden><button><i data-lucide="log-out"></i><span>Sign out</span></button></div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Accounts -->
+        <section class="view" data-pane="accounts">
+          <div class="segmented"><button class="is-selected">Pending</button><button>All</button></div>
+          <div class="table-wrap"><table class="grid">
+            <thead><tr><th>User</th><th>Status</th><th>Email</th><th>Platform role</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><strong>Newbie Lim</strong><small>newbie@liziz.com</small></th><td><span class="badge warn">pending</span></td><td><span class="badge off">Unverified</span></td><td><span class="badge">User</span></td><td class="actions"><button class="btn primary sm">Approve</button></td></tr>
+              <tr><th scope="row"><strong>Jane Doe</strong><small>jane@liziz.com</small></th><td><span class="badge ok">active</span></td><td><span class="badge ok">Verified</span></td><td><select class="select sm"><option>User</option><option>Portal Admin</option><option>Super Admin</option></select></td><td class="actions"><button class="btn ghost sm">Deactivate</button></td></tr>
+              <tr><th scope="row"><strong>Hana (HR Admin)</strong><small>hradmin@liziz.com</small></th><td><span class="badge ok">active</span></td><td><span class="badge ok">Verified</span></td><td><select class="select sm"><option>User</option><option>Portal Admin</option><option>Super Admin</option></select></td><td class="actions"><button class="btn ghost sm">Deactivate</button></td></tr>
+              <tr><th scope="row"><strong>Super Admin</strong> <span class="badge super">Super</span><small>super@liziz.com</small></th><td><span class="badge ok">active</span></td><td><span class="badge ok">Verified</span></td><td><select class="select sm"><option>User</option><option>Portal Admin</option><option selected>Super Admin</option></select></td><td class="actions"></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- Apps & Roles -->
+        <section class="view" data-pane="appsRoles" hidden>
+          <div class="table-wrap"><table class="grid">
+            <thead><tr><th>User</th><th>HR &amp; Admin</th><th>Procurement</th><th>PSM</th><th>Liziz Biogas</th><th>R&amp;D</th><th>CRM</th><th></th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><strong>Hana (HR Admin)</strong><small>hradmin@liziz.com</small></th><td><span class="badge full">App Admin · Del</span></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td><span class="badge ok">Member</span></td><td class="muted">—</td><td class="actions"><button class="btn ghost icon" title="Edit"><i data-lucide="pencil"></i></button></td></tr>
+              <tr><th scope="row"><strong>Jane Doe</strong><small>jane@liziz.com</small></th><td><span class="badge ok">Member</span></td><td class="muted">—</td><td><span class="badge ok">Member</span></td><td class="muted">—</td><td><span class="badge full">App Admin · Del</span></td><td class="muted">—</td><td class="actions"><button class="btn ghost icon" title="Edit"><i data-lucide="pencil"></i></button></td></tr>
+              <tr><th scope="row"><strong>Bob Tan</strong><small>bob@acme.com</small></th><td class="muted">—</td><td><span class="badge ok">Member</span></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="actions"><button class="btn ghost icon" title="Edit"><i data-lucide="pencil"></i></button></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- Company Access -->
+        <section class="view" data-pane="companyAccess" hidden>
+          <div class="app-picker"><button class="chip is-active"><i data-lucide="users"></i><span>HR &amp; Admin</span></button></div>
+          <div class="table-wrap"><table class="grid">
+            <thead><tr><th>User</th><th>Liziz Holdings</th><th>Acme Engineering</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><strong>Hana (HR Admin)</strong> <span class="badge full">App Admin</span><small>hradmin@liziz.com</small></th><td><select class="select sm"><option>No Access</option><option>View</option><option>Edit</option><option selected>Admin</option></select></td><td><select class="select sm"><option selected>No Access</option><option>View</option><option>Edit</option><option>Admin</option></select></td></tr>
+              <tr><th scope="row"><strong>Jane Doe</strong><small>jane@liziz.com</small></th><td><select class="select sm"><option>No Access</option><option>View</option><option selected>Edit</option><option>Admin</option></select></td><td><select class="select sm"><option selected>No Access</option><option>View</option><option>Edit</option><option>Admin</option></select></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- Companies -->
+        <section class="view" data-pane="companies" hidden>
+          <div class="row-actions"><button class="btn primary"><i data-lucide="plus"></i><span>New company</span></button></div>
+          <div class="cards">
+            <article class="company-card"><span class="badge ok">active</span><h3>Liziz Holdings</h3><small>liziz</small></article>
+            <article class="company-card"><span class="badge ok">active</span><h3>Acme Engineering</h3><small>acme</small></article>
+          </div>
+          <h3 class="subhead">App availability</h3>
+          <p class="muted small">Tick which companies each app's company switcher links to.</p>
+          <div class="table-wrap"><table class="grid" id="appCompanyTable">
+            <thead><tr><th>Company</th><th>HR &amp; Admin</th><th>Procurement</th><th>PSM</th><th>Liziz Biogas</th><th>R&amp;D</th><th>CRM</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><strong>Liziz Holdings</strong></th><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox"></label></td><td><label class="cellcheck"><input type="checkbox"></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td></tr>
+              <tr><th scope="row"><strong>Acme Engineering</strong></th><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox"></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td><td><label class="cellcheck"><input type="checkbox" checked></label></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const icons=()=>window.lucide&&window.lucide.createIcons();
+      const launcher=document.getElementById('launcher'), shell=document.getElementById('shell');
+      const META={
+        accounts:["Accounts","Approve sign-ups and manage account status. (Super Admin / Portal Admin)"],
+        appsRoles:["Apps & Roles","Assign which apps each user may use. (Super Admin / Portal Admin)"],
+        companyAccess:["Company Access","For an app you administer, assign companies + level per user."],
+        companies:["Companies","Organizations + which companies each app links to."]
+      };
+      function show(view){
+        if(view==='launcher'){shell.hidden=true;launcher.hidden=false;icons();return;}
+        launcher.hidden=true;shell.hidden=false;
+        document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==view);
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('is-active',n.dataset.view===view));
+        document.getElementById('viewTitle').textContent=META[view][0];
+        document.getElementById('viewSub').textContent=META[view][1];
+        icons();
+      }
+      document.querySelector('.nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)show(b.dataset.view);});
+      document.getElementById('tileAdmin').addEventListener('click',()=>show('accounts'));
+      // user menu dropdown
+      const um=document.getElementById('userMenu');
+      um.querySelector('#userToggle').addEventListener('click',e=>{e.stopPropagation();const d=um.querySelector('.dropdown');d.hidden=!d.hidden;icons();});
+      document.addEventListener('click',()=>{const d=um.querySelector('.dropdown');if(d)d.hidden=true;});
+      // segmented + app picker cosmetic
+      document.querySelectorAll('.segmented').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...s.children].forEach(c=>c.classList.toggle('is-selected',c===b));}));
+      icons();document.addEventListener('DOMContentLoaded',icons);
+    </script>
+  </body>
+</html>
