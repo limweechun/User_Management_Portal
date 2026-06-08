@@ -139,8 +139,37 @@ button { cursor: pointer; }
 .company-card small { color: var(--muted); }
 
 /* ---- Drawer ---- */
-.drawer-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(16, 35, 31, .45); display: flex; justify-content: flex-end; }
-.drawer { width: min(440px, 100%); height: 100%; background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+/* All popup forms use a centered modal that the user can DRAG (by the header)
+   and RESIZE (from the bottom-right corner). The backdrop centers it initially;
+   dragging applies a transform offset, resizing is native CSS `resize`. */
+.drawer-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(16, 35, 31, .45); display: flex; justify-content: center; align-items: center; padding: 16px; }
+.drawer {
+  width: min(640px, 96vw); height: auto;     /* wider window */
+  min-width: 380px; min-height: 220px; max-width: 96vw; max-height: 92vh;
+  background: var(--surface-soft);            /* VISIBLE drag frame band */
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column; border-radius: 14px;
+  resize: both; overflow: hidden;            /* drag the corner to expand */
+  cursor: move;                              /* hovering the frame shows the drag cursor */
+  padding: 10px;                             /* the visible, grabbable frame band */
+  border: 1px solid var(--line);
+}
+/* Header is a clear title bar (white, ⠿ grip). The 10px frame around the white
+   head/body is the soft-tinted band you grab to drag from the window edge. */
+.drawer-head {
+  cursor: move; user-select: none;
+  background: var(--surface); border: 1px solid var(--line); border-bottom: none;
+  border-radius: 9px 9px 0 0;
+}
+.drawer-head h2 { display: flex; align-items: center; gap: 8px; }
+.drawer-head h2::before { content: "⠿"; font-size: 18px; line-height: 1; opacity: .5; }
+.drawer-body { background: var(--surface); border: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: 0 0 9px 9px; flex: 1 1 auto; }
+/* Form controls keep their normal cursors (so they stay usable) — the frame,
+   header, and empty gaps show the move cursor for dragging. */
+.drawer .field, .drawer label, .drawer input, .drawer textarea { cursor: auto; }
+.drawer select, .drawer button, .drawer .btn, .drawer a { cursor: pointer; }
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
 .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
 .drawer-head h2 { margin: 0; font-size: 18px; }
 .drawer-body { padding: 20px; overflow-y: auto; }

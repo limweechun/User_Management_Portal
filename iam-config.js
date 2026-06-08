@@ -11,5 +11,5 @@
  * so make sure the backend's CORS_ORIGINS includes this portal's origin.
  * ==========================================================================*/
 window.IAM_CONFIG = {
-  apiBase: ""
+  apiBase: "/api/v1"
 };

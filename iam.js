@@ -14,7 +14,7 @@
 (function () {
   const DB_KEY = "iam_db_v2";
   const SESSION_KEY = "iam_id_v2";
-  const APP_IDS = ["hr", "procurement", "psm", "biogas", "rnd", "crm"];
+  const APP_IDS = ["hr", "procurement", "psm", "biogas", "rnd", "crm", "texcycle"];
   const LEVELS = ["view", "edit", "admin"];
 
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.floor(Math.random() * 1e6));
@@ -30,10 +30,11 @@
     const apps = [
       { id: "hr", name: "HR & Admin", icon: "users", url: "/hr" },
       { id: "procurement", name: "Procurement", icon: "shopping-cart", url: "/procurement" },
-      { id: "psm", name: "PSM", icon: "package", url: "/psm" },
+      { id: "psm", name: "Project, Service Job And Goods Supply Management", icon: "package", url: "/psm" },
       { id: "biogas", name: "Liziz Biogas Plant", icon: "factory", url: "/biogas" },
       { id: "rnd", name: "R&D Hub", icon: "flask-conical", url: "/rnd" },
-      { id: "crm", name: "CRM", icon: "handshake", url: "/crm" }
+      { id: "crm", name: "CRM", icon: "handshake", url: "/crm" },
+      { id: "texcycle", name: "Tex Cycle Biomass Power Plant", icon: "zap", url: "/texcycle" }
     ];
     const users = [
       { id: "u-super",  email: "super@liziz.com",   password: "super123",   fullName: "Super Admin",   status: "active",  emailVerified: true,  platformRole: "superadmin" },
@@ -80,6 +81,7 @@
     if (raw) {
       const db = JSON.parse(raw);
       if (!db.appCompanies) db.appCompanies = []; // backfill older stores
+      if (!db.audit) db.audit = [];               // backfill audit log
       return db;
     }
     const db = seed();
@@ -108,6 +110,18 @@
 
   // ---- Helpers ------------------------------------------------------------
   const userById = (db, id) => db.users.find((u) => u.id === id);
+  // Record an admin action in the mock audit log (mirrors the live /admin/audit shape).
+  function pushAudit(db, s, action, targetUserId, detail) {
+    if (!db.audit) db.audit = [];
+    db.audit.unshift({
+      id: uid(), action,
+      actor: s ? s.email : null,
+      target: targetUserId ? ((userById(db, targetUserId) || {}).email || targetUserId) : null,
+      appId: null, companyId: null, detail: detail || null,
+      createdAt: new Date().toISOString()
+    });
+    if (db.audit.length > 500) db.audit.length = 500;
+  }
   const entOf = (db, userId, appId) => db.entitlements.find((e) => e.userId === userId && e.appId === appId);
   const companyName = (db, id) => (db.companies.find((c) => c.id === id) || {}).name;
   const appHasCompany = (db, appId, companyId) => db.appCompanies.some((ac) => ac.appId === appId && ac.companyId === companyId);
@@ -247,6 +261,17 @@
       });
     },
 
+    // Build a launch token string for opening an app at an external URL.
+    // MOCK: an unsigned JWT the target app can decode for exp/identity. (Backend
+    // signature validation needs the LIVE iam-service's signed token instead.)
+    async appAccessToken(app, companyId) {
+      const claims = await this.appToken(app, companyId);
+      const b64 = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const header = b64({ alg: "HS256", typ: "JWT" });
+      const payload = b64({ ...claims, exp: Math.floor(Date.now() / 1000) + 3600 });
+      return header + "." + payload + ".dev";
+    },
+
     // ---- Portal capability checks ---------------------------------------
     isSuperAdmin() { return isSuper(sess()); },
     isPortalAdmin() { return isPortalAdmin(sess()); },
@@ -263,7 +288,54 @@
       if (!this.canUsePortal()) return settle(fail("Admin access required."));
       let users = db.users.map((u) => publicUser(db, u));
       if (filter && filter.status) users = users.filter((u) => u.status === filter.status);
+      if (filter && filter.q) {
+        const q = String(filter.q).toLowerCase();
+        users = users.filter((u) => (u.fullName + " " + u.email).toLowerCase().includes(q));
+      }
       return settle(users);
+    },
+
+    async createUser({ email, fullName, password, platformRole }) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      email = String(email || "").trim().toLowerCase();
+      fullName = String(fullName || "").trim();
+      platformRole = platformRole || "user";
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settle(fail("A valid email is required."));
+      if (!fullName) return settle(fail("Full name is required."));
+      if (String(password || "").length < 6) return settle(fail("Password must be at least 6 characters."));
+      if (platformRole !== "user" && !isSuper(s)) return settle(fail("Only a Super Admin can create admin accounts."));
+      if (db.users.some((u) => u.email === email)) return settle(fail("An account with that email already exists."));
+      const u = { id: uid(), email, password, fullName, status: "active", emailVerified: true, platformRole };
+      db.users.push(u); pushAudit(db, s, "create_user", u.id, { email, platformRole }); saveDb(db);
+      return settle(publicUser(db, u));
+    },
+    async updateUser(userId, patch) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      const u = userById(db, userId); if (!u) return settle(fail("User not found."));
+      if (patch && patch.fullName != null) { if (!String(patch.fullName).trim()) return settle(fail("Full name cannot be empty.")); u.fullName = String(patch.fullName).trim(); }
+      if (patch && patch.email != null) {
+        const email = String(patch.email).trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settle(fail("A valid email is required."));
+        if (db.users.some((x) => x.email === email && x.id !== u.id)) return settle(fail("Another account already uses that email."));
+        u.email = email;
+      }
+      pushAudit(db, s, "edit_user", u.id, patch); saveDb(db);
+      return settle(publicUser(db, u));
+    },
+    async resetPassword(userId, password) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      const u = userById(db, userId); if (!u) return settle(fail("User not found."));
+      if (String(password || "").length < 6) return settle(fail("Password must be at least 6 characters."));
+      u.password = password; pushAudit(db, s, "reset_password", u.id, null); saveDb(db);
+      return settle({ ok: true });
+    },
+    async listAudit(limit) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      return settle((db.audit || []).slice(0, limit || 100));
     },
 
     async approveAccount(userId) {

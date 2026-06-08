@@ -24,7 +24,7 @@
   }
 
   const RealIAM = {
-    APP_IDS: ["hr", "procurement", "psm", "biogas", "rnd", "crm"],
+    APP_IDS: ["hr", "procurement", "psm", "biogas", "rnd", "crm", "texcycle"],
     LEVELS: ["view", "edit", "admin"],
     LEVEL_LABEL: { view: "View", edit: "Edit", admin: "Admin" },
 
@@ -53,12 +53,22 @@
 
     // ---- Per-app token (for the apps; portal doesn't navigate here) ----
     async appToken(app, companyId) { const r = await req("POST", "/app-token", { app, companyId }); return r.claims; },
+    // Signed access token to launch an app at an external URL (LIVE backend issues it).
+    async appAccessToken(app, companyId) { const r = await req("POST", "/app-token", { app, companyId }); return r.accessToken; },
 
     // ---- Admin: accounts ----
     async listUsers(filter) {
       const status = filter && filter.status ? filter.status : "all";
-      return req("GET", "/admin/users?status=" + encodeURIComponent(status));
+      const q = filter && filter.q ? filter.q : "";
+      const qs = "?status=" + encodeURIComponent(status) + (q ? "&q=" + encodeURIComponent(q) : "");
+      return req("GET", "/admin/users" + qs);
     },
+    async createUser({ email, fullName, password, platformRole }) {
+      return req("POST", "/admin/users", { email, fullName, password, platformRole: platformRole || "user" });
+    },
+    async updateUser(userId, patch) { return req("PATCH", "/admin/users/" + userId, patch); },
+    async resetPassword(userId, password) { return req("POST", "/admin/users/" + userId + "/reset-password", { password }); },
+    async listAudit(limit) { return req("GET", "/admin/audit?limit=" + (limit || 100)); },
     async approveAccount(userId) { return req("POST", "/admin/users/" + userId + "/approve"); },
     async setUserStatus(userId, status) {
       return req("POST", "/admin/users/" + userId + "/" + (status === "active" ? "activate" : "deactivate"));
