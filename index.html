@@ -4,45 +4,110 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>User Management Portal</title>
-    <link rel="stylesheet" href="styles.css?v=20">
+    <link rel="stylesheet" href="styles.css?v=63">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script src="iam-config.js?v=11" defer></script>
-    <script src="iam.js?v=11" defer></script>
-    <script src="iam-api.js?v=11" defer></script>
-    <script src="app.js?v=19" defer></script>
+    <script src="iam.js?v=59" defer></script>
+    <script src="iam-api.js?v=56" defer></script>
+    <script src="app.js?v=62" defer></script>
   </head>
   <body>
-    <!-- Login -->
-    <div class="overlay" id="loginScreen" hidden>
-      <div class="card">
-        <div class="brand"><span class="brand-mark">IAM</span><div><strong>User Management</strong><small>Workplace Operations · Admin Portal</small></div></div>
-        <h1>Sign in</h1>
-        <p class="muted">Manage accounts, app access and permissions.</p>
-        <form id="loginForm" class="form" novalidate>
-          <label class="field"><span>Email</span><input id="loginEmail" type="email" autocomplete="username" placeholder="you@company.com" required></label>
-          <label class="field"><span>Password</span><input id="loginPass" type="password" autocomplete="current-password" required></label>
-          <p id="loginError" class="error" role="alert" hidden></p>
-          <button class="btn primary block" type="submit"><i data-lucide="log-in"></i><span>Sign in</span></button>
-        </form>
-        <p class="hint">No account? <a href="#" id="toRegister">Create one</a>. Demo: <code>super@liziz.com / super123</code> (super admin), <code>portal@liziz.com / portal123</code> (portal admin), <code>hradmin@liziz.com / hradmin123</code> (HR app admin)</p>
-      </div>
-    </div>
+    <!-- Auth (modern split-screen: brand hero + form pane) -->
+    <div class="auth" id="authScreen" hidden>
+      <!-- Left: brand hero -->
+      <aside class="auth-hero">
+        <div class="auth-logo"><span class="auth-logo-mark" id="brandMark">W</span><span class="auth-logo-text" id="brandName">Workplace Operations</span></div>
+        <div class="auth-hero-body">
+          <h2>One secure login for your entire workplace.</h2>
+          <p>Centralized identity and access for every business app — your teams sign in once, and you stay in control.</p>
+          <ul class="auth-feats">
+            <li><span class="feat-ico"><i data-lucide="key-round"></i></span> One login for all your work apps</li>
+            <li><span class="feat-ico"><i data-lucide="layout-grid"></i></span> All your apps, together in one place</li>
+            <li><span class="feat-ico"><i data-lucide="shield-check"></i></span> Your account stays private and secure</li>
+          </ul>
+          <div id="authSlides" class="auth-photos" hidden></div>
+        </div>
+        <div class="auth-hero-foot"><small id="brandFoot">© 2026 True Eco Digital Platform · Secure by design</small></div>
+      </aside>
 
-    <!-- Register -->
-    <div class="overlay" id="registerScreen" hidden>
-      <div class="card">
-        <div class="brand"><span class="brand-mark">IAM</span><div><strong>Create account</strong><small>Self sign-up</small></div></div>
-        <h1>Create your account</h1>
-        <p class="muted">After signing up you'll verify your email, then an administrator approves your account and assigns your apps.</p>
-        <form id="registerForm" class="form" novalidate>
-          <label class="field"><span>Full name</span><input id="regName" type="text" required></label>
-          <label class="field"><span>Email</span><input id="regEmail" type="email" autocomplete="email" required></label>
-          <label class="field"><span>Password</span><input id="regPass" type="password" autocomplete="new-password" required></label>
-          <p id="regError" class="error" role="alert" hidden></p>
-          <button class="btn primary block" type="submit"><i data-lucide="user-plus"></i><span>Create account</span></button>
-        </form>
-        <p class="hint"><a href="#" id="toLogin">Back to sign in</a></p>
-      </div>
+      <!-- Right: form pane (screens swap in place) -->
+      <main class="auth-pane">
+        <div id="paneLogo" class="auth-pane-logo" hidden></div>
+        <!-- Sign in -->
+        <section id="loginScreen" class="auth-form">
+          <div class="auth-head"><h1>Sign in</h1><p class="auth-sub" id="loginSub">Welcome back — enter your details to continue.</p></div>
+          <form id="loginForm" class="form" novalidate>
+            <label class="field"><span>Email</span><input id="loginEmail" type="email" autocomplete="username" placeholder="you@company.com" required></label>
+            <label class="field"><span>Password</span>
+              <div class="pw-wrap">
+                <input id="loginPass" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+                <button type="button" class="pw-toggle" data-pw="loginPass" aria-label="Show password" tabindex="-1"><i data-lucide="eye"></i></button>
+              </div>
+            </label>
+            <div class="auth-row">
+              <label class="auth-check"><input id="rememberMe" type="checkbox"> Remember me</label>
+              <a href="#" id="toForgot" class="link">Forgot password?</a>
+            </div>
+            <p id="loginError" class="error" role="alert" hidden></p>
+            <button class="btn primary block" type="submit"><i data-lucide="log-in"></i><span>Sign in</span></button>
+          </form>
+          <div class="or-sep">new here?</div>
+          <button class="btn ghost block" id="toRegisterBtn" type="button"><i data-lucide="user-plus"></i><span>Create new account</span></button>
+          <p class="hint">Demo: <code>super@liziz.com / super123</code> · <code>portal@liziz.com / portal123</code> · <code>hradmin@liziz.com / hradmin123</code></p>
+        </section>
+
+        <!-- Create account -->
+        <section id="registerScreen" class="auth-form" hidden>
+          <div class="auth-head"><h1>Create your account</h1><p class="auth-sub">Verify your email and sign in right away. New accounts start with no apps — an administrator grants you access.</p></div>
+          <form id="registerForm" class="form" novalidate>
+            <label class="field"><span>Full name</span><input id="regName" type="text" autocomplete="name" required></label>
+            <label class="field"><span>Email</span><input id="regEmail" type="email" autocomplete="email" placeholder="you@company.com" required></label>
+            <label class="field"><span>Password</span>
+              <div class="pw-wrap">
+                <input id="regPass" type="password" autocomplete="new-password" placeholder="At least 6 characters" required>
+                <button type="button" class="pw-toggle" data-pw="regPass" aria-label="Show password" tabindex="-1"><i data-lucide="eye"></i></button>
+              </div>
+            </label>
+            <p id="regError" class="error" role="alert" hidden></p>
+            <button class="btn primary block" type="submit"><i data-lucide="user-plus"></i><span>Create account</span></button>
+          </form>
+          <p class="hint"><a href="#" id="toLogin" class="link">← Back to sign in</a></p>
+        </section>
+
+        <!-- Forgot password -->
+        <section id="forgotScreen" class="auth-form" hidden>
+          <div class="auth-head"><h1>Forgot your password?</h1><p class="auth-sub">Enter your account email and we'll send you a link to set a new password.</p></div>
+          <form id="forgotForm" class="form" novalidate>
+            <label class="field"><span>Email</span><input id="forgotEmail" type="email" autocomplete="username" placeholder="you@company.com" required></label>
+            <p id="forgotError" class="error" role="alert" hidden></p>
+            <p id="forgotOk" class="notice" role="status" hidden></p>
+            <button class="btn primary block" type="submit"><i data-lucide="mail"></i><span>Send reset link</span></button>
+          </form>
+          <p class="hint"><a href="#" id="forgotToLogin" class="link">← Back to sign in</a></p>
+        </section>
+
+        <!-- Reset password (opened from the emailed ?reset=<token> link) -->
+        <section id="resetScreen" class="auth-form" hidden>
+          <div class="auth-head"><h1>Choose a new password</h1><p class="auth-sub">Enter and confirm a new password for your account.</p></div>
+          <form id="resetForm" class="form" novalidate>
+            <label class="field"><span>New password</span>
+              <div class="pw-wrap">
+                <input id="resetPass" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required>
+                <button type="button" class="pw-toggle" data-pw="resetPass" aria-label="Show password" tabindex="-1"><i data-lucide="eye"></i></button>
+              </div>
+            </label>
+            <label class="field"><span>Confirm new password</span>
+              <div class="pw-wrap">
+                <input id="resetPass2" type="password" autocomplete="new-password" minlength="6" placeholder="Re-enter password" required>
+                <button type="button" class="pw-toggle" data-pw="resetPass2" aria-label="Show password" tabindex="-1"><i data-lucide="eye"></i></button>
+              </div>
+            </label>
+            <p id="resetError" class="error" role="alert" hidden></p>
+            <button class="btn primary block" type="submit"><i data-lucide="check"></i><span>Update password</span></button>
+          </form>
+          <p class="hint"><a href="#" id="resetToLogin" class="link">← Back to sign in</a></p>
+        </section>
+      </main>
     </div>
 
     <!-- Awaiting approval -->
@@ -59,23 +124,37 @@
       <aside class="sidebar">
         <div class="brand"><span class="brand-mark">IAM</span><div><strong>User Management</strong><small>Admin Portal</small></div></div>
         <nav class="nav" id="nav">
-          <button class="nav-item" id="navLauncher" type="button"><i data-lucide="grid-3x3"></i><span>All apps</span></button>
-          <button class="nav-item" data-view="accounts" id="navAccounts" type="button" hidden><i data-lucide="user-check"></i><span>User Account</span></button>
-          <button class="nav-item" data-view="appsRoles" id="navAppsRoles" type="button" hidden><i data-lucide="layout-grid"></i><span>Apps &amp; Roles</span></button>
-          <button class="nav-item" data-view="companyAccess" id="navCompanyAccess" type="button" hidden><i data-lucide="building-2"></i><span>Company Access</span></button>
-          <button class="nav-item" data-view="companies" id="navCompanies" type="button" hidden><i data-lucide="briefcase"></i><span>Companies</span></button>
-          <button class="nav-item" data-view="audit" id="navAudit" type="button" hidden><i data-lucide="scroll-text"></i><span>Audit Log</span></button>
+          <button class="nav-item" id="navLauncher" type="button"><i data-lucide="arrow-left"></i><span>Back to App Portal</span></button>
+          <div class="nav-group" id="navGroupUser">
+            <div class="nav-sec">User</div>
+            <button class="nav-item" data-view="accounts" id="navAccounts" type="button" hidden><i data-lucide="user-check"></i><span>User Account</span></button>
+            <button class="nav-item" data-view="appsRoles" id="navAppsRoles" type="button" hidden><i data-lucide="layout-grid"></i><span>User &amp; Apps</span></button>
+          </div>
+          <div class="nav-group" id="navGroupCompany">
+            <div class="nav-sec">Company</div>
+            <button class="nav-item" data-view="companyAccess" id="navCompanyAccess" type="button" hidden><i data-lucide="building-2"></i><span>Company Access</span></button>
+            <button class="nav-item" data-view="companies" id="navCompanies" type="button" hidden><i data-lucide="building"></i><span>Company Setup</span></button>
+          </div>
+          <div class="nav-group" id="navGroupOther">
+            <div class="nav-sec">Other</div>
+            <button class="nav-item" data-view="apps" id="navApps" type="button" hidden><i data-lucide="layout-dashboard"></i><span>Organize Apps</span></button>
+            <button class="nav-item" data-view="feedback" id="navFeedback" type="button" hidden><i data-lucide="message-square"></i><span>Feedback Center</span></button>
+            <button class="nav-item" data-view="audit" id="navAudit" type="button" hidden><i data-lucide="scroll-text"></i><span>Audit Log</span></button>
+          </div>
         </nav>
-        <div class="sidebar-foot"><span class="badge role" id="meRoleBadge">--</span></div>
       </aside>
 
       <main class="main">
         <header class="topbar">
           <div class="page-head"><h1 id="viewTitle" tabindex="-1">User Account</h1><p id="viewSub" class="muted"></p></div>
           <div class="topbar-actions">
+            <button class="btn ghost icon" id="settingsBtn" type="button" aria-label="Admin settings" title="Admin settings" hidden><i data-lucide="settings"></i></button>
             <div class="user-chip">
-              <span class="avatar" id="meAvatar">--</span>
-              <span class="meta"><strong id="meName">--</strong><small id="meEmail">--</small></span>
+              <button class="chip-btn" id="meSettingsBtn" type="button" aria-label="Personal settings" title="Personal settings">
+                <span class="avatar" id="meAvatar">--</span>
+                <span class="meta"><strong id="meName">--</strong><small id="meEmail">--</small></span>
+                <i data-lucide="settings-2" class="chip-cog"></i>
+              </button>
               <button class="btn ghost icon" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out"><i data-lucide="log-out"></i></button>
             </div>
           </div>
@@ -85,43 +164,79 @@
         <section id="accountsView" class="view" hidden>
           <div class="row-actions" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <div class="segmented" id="accountsFilter" role="tablist">
-              <button class="is-selected" data-status="pending" type="button">Pending</button>
-              <button data-status="all" type="button">All</button>
+              <button data-status="pending" type="button">Pending</button>
+              <button class="is-selected" data-status="all" type="button">All</button>
             </div>
             <input id="accountsSearch" class="input sm" type="search" placeholder="Search name or email…" aria-label="Search users" style="flex:1;min-width:180px;max-width:320px">
             <button class="btn primary" id="newUserBtn" type="button"><i data-lucide="user-plus"></i><span>New user</span></button>
           </div>
+          <div id="userStats" class="stat-cards"></div>
           <div class="role-note" style="display:flex;gap:18px;flex-wrap:wrap;padding:12px 14px;margin-bottom:14px;border:1px solid var(--line,#2a2a2a);border-radius:10px;background:var(--panel,rgba(255,255,255,0.03))">
+            <span style="flex:1 1 100%;margin:-2px 0 2px"><small class="muted">The <strong>Role</strong> is a global role shared by every app. Two roles also grant portal-administration rights:</small></span>
             <span style="display:flex;align-items:flex-start;gap:8px"><i data-lucide="shield" style="width:16px;height:16px;flex:0 0 auto;margin-top:2px"></i><span><strong>Super Admin</strong><br><small class="muted">Full control. The only role that can create other admins and approve deletions.</small></span></span>
-            <span style="display:flex;align-items:flex-start;gap:8px"><i data-lucide="shield-check" style="width:16px;height:16px;flex:0 0 auto;margin-top:2px"></i><span><strong>Portal Admin</strong> <small class="muted">(Platform Admin)</small><br><small class="muted">Manages users and assigns app access. Cannot create admins or approve deletions.</small></span></span>
-            <span style="display:flex;align-items:flex-start;gap:8px"><i data-lucide="user" style="width:16px;height:16px;flex:0 0 auto;margin-top:2px"></i><span><strong>User</strong><br><small class="muted">A normal account. Can only open the apps and companies they're granted.</small></span></span>
+            <span style="display:flex;align-items:flex-start;gap:8px"><i data-lucide="shield-check" style="width:16px;height:16px;flex:0 0 auto;margin-top:2px"></i><span><strong>Admin</strong> <small class="muted">(Portal Admin)</small><br><small class="muted">Manages users and assigns app access. Cannot create admins or approve deletions.</small></span></span>
+            <span style="display:flex;align-items:flex-start;gap:8px"><i data-lucide="briefcase" style="width:16px;height:16px;flex:0 0 auto;margin-top:2px"></i><span><strong>Director → New User</strong><br><small class="muted">Operational roles. Used inside each app; no portal-administration rights.</small></span></span>
           </div>
           <div class="table-wrap"><table id="accountsTable" class="grid"></table></div>
         </section>
 
-        <!-- Apps & Roles (superadmin) -->
+        <!-- User & Apps (superadmin) -->
         <section id="appsRolesView" class="view" hidden>
           <div class="table-wrap"><table id="appsRolesTable" class="grid"></table></div>
         </section>
 
-        <!-- Company Access (app admins) -->
+        <!-- Company Access (Portal admins set up an app's companies; app admins assign access) -->
         <section id="companyAccessView" class="view" hidden>
           <div class="app-picker" id="appPicker"></div>
+          <div id="appCompaniesPanel"></div>
           <div class="table-wrap"><table id="companyAccessTable" class="grid"></table></div>
         </section>
 
-        <!-- Companies -->
+        <!-- Company Setup (PSM-style: stat cards + table + Add/Edit modal) -->
         <section id="companiesView" class="view" hidden>
-          <div class="row-actions"><button class="btn primary" id="newCompanyBtn" type="button"><i data-lucide="plus"></i><span>New company</span></button></div>
-          <div id="companiesList" class="cards"></div>
-          <h3 class="subhead">App availability</h3>
-          <p class="muted small">Tick which companies each app's company switcher links to. Unticking removes that company from the app (and any access already granted there).</p>
-          <div class="table-wrap"><table id="appCompanyTable" class="grid"></table></div>
+          <div id="companyStats" class="stat-cards"></div>
+          <div class="row-actions" style="margin-bottom:12px"><button class="btn primary" id="newCompanyBtn" type="button"><i data-lucide="plus"></i><span>Add company</span></button></div>
+          <div class="table-wrap"><table id="companiesTable" class="grid"></table></div>
         </section>
 
         <!-- Audit log -->
         <section id="auditView" class="view" hidden>
+          <div class="row-actions" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <select id="auActionFilter" class="select sm" aria-label="Filter by action"><option value="all">All actions</option></select>
+            <select id="auAppFilter" class="select sm" aria-label="Filter by app"><option value="all">All apps</option></select>
+            <input id="auSearch" class="input sm" type="search" placeholder="Search audit…" aria-label="Search audit log" style="min-width:160px;max-width:280px">
+            <span style="flex:1"></span>
+            <button class="btn ghost" id="auExport" type="button" title="Export the current filter as CSV"><i data-lucide="download"></i><span>Export CSV</span></button>
+          </div>
           <div class="table-wrap"><table id="auditTable" class="grid"></table></div>
+          <div id="auPager" style="display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px"></div>
+        </section>
+
+        <!-- Organize Apps (app catalog) -->
+        <section id="appsView" class="view" hidden>
+          <div class="row-actions" style="margin-bottom:12px"><button class="btn primary" id="newAppBtn" type="button"><i data-lucide="plus"></i><span>New app</span></button></div>
+          <div class="table-wrap"><table id="appsTable" class="grid"></table></div>
+        </section>
+
+        <!-- Feedback Center (all apps' feedback) -->
+        <section id="feedbackView" class="view" hidden>
+          <div class="row-actions" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <select id="fbAppFilter" class="select sm" aria-label="Filter by app"><option value="all">All apps</option></select>
+            <select id="fbStatusFilter" class="select sm" aria-label="Filter by status">
+              <option value="all">All status</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="resolved">Resolved</option>
+            </select>
+            <input id="fbSearch" class="input sm" type="search" placeholder="Search feedback…" aria-label="Search feedback" style="min-width:160px;max-width:280px">
+            <span style="flex:1"></span>
+            <button class="btn ghost" id="fbExport" type="button" title="Export the current list as CSV"><i data-lucide="download"></i><span>Export CSV</span></button>
+            <button class="btn primary" id="newFeedbackBtn" type="button"><i data-lucide="message-square-plus"></i><span>Send feedback</span></button>
+          </div>
+          <div id="feedbackStats" class="stat-cards"></div>
+          <div class="table-wrap"><table id="feedbackTable" class="grid"></table></div>
+        </section>
+
+        <!-- Admin settings (tabs: Email Configuration + ID Code Format) -->
+        <section id="settingsView" class="view" hidden>
+          <div id="settingsBody"></div>
         </section>
 
         <p id="toast" class="toast" hidden></p>

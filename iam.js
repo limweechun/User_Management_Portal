@@ -17,6 +17,25 @@
   const APP_IDS = ["hr", "procurement", "psm", "biogas", "rnd", "crm", "texcycle"];
   const LEVELS = ["view", "edit", "admin"];
 
+  // Global role catalog (mirrors iam-service/src/constants/roles.ts). The portal
+  // assigns roles; platformRole/level/userRole are DERIVED for back-compat.
+  const GLOBAL_ROLES = [
+    { name: "NEW_USER", label: "New User", rank: 0, description: "Newly added account awaiting a role assignment.", isSystem: true },
+    { name: "TECHNICIAN", label: "Technician", rank: 1, description: "Field / operational user with limited access.", isSystem: true },
+    { name: "SUPERVISOR", label: "Supervisor", rank: 2, description: "Supervises a team with standard write access.", isSystem: true },
+    { name: "EXECUTIVE", label: "Executive", rank: 3, description: "Operational staff with standard write access.", isSystem: true },
+    { name: "MANAGER", label: "Manager", rank: 4, description: "Manages day-to-day operations, approvals and team output.", isSystem: true },
+    { name: "DIRECTOR", label: "Director", rank: 5, description: "Senior management. Broad write access including financial visibility.", isSystem: true },
+    { name: "ADMIN", label: "Admin", rank: 6, description: "Administers the portal and apps. Broad authority, but cannot manage Super Admins.", isSystem: true },
+    { name: "SUPERADMIN", label: "Super Admin", rank: 7, description: "Full control across the platform and every app.", isSystem: true }
+  ];
+  const GLOBAL_ROLE_NAMES = GLOBAL_ROLES.map((r) => r.name);
+  const roleToPlatformRole = (r) => (r === "SUPERADMIN" ? "superadmin" : r === "ADMIN" ? "admin" : "user");
+  const roleToLevel = (r) => ((r === "SUPERADMIN" || r === "ADMIN") ? "admin" : (r === "DIRECTOR" || r === "MANAGER") ? "edit" : "view");
+  const roleToUserRole = (r) => (r === "SUPERADMIN" ? "SUPERADMIN" : r === "ADMIN" ? "ADMIN" : "MEMBER");
+  const levelToRole = (l) => (l === "admin" ? "ADMIN" : l === "edit" ? "MANAGER" : "TECHNICIAN");
+  const platformRoleToRole = (p) => (p === "superadmin" ? "SUPERADMIN" : p === "admin" ? "ADMIN" : "NEW_USER");
+
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.floor(Math.random() * 1e6));
   const settle = (v) => new Promise((res) => setTimeout(() => res(v), 50));
   const fail = (m) => { throw new Error(m); };
@@ -36,13 +55,14 @@
       { id: "crm", name: "CRM", icon: "handshake", url: "/crm" },
       { id: "texcycle", name: "Tex Cycle Biomass Power Plant", icon: "zap", url: "/texcycle" }
     ];
+    // globalRole is the source of truth; platformRole is derived from it.
     const users = [
-      { id: "u-super",  email: "super@liziz.com",   password: "super123",   fullName: "Super Admin",   status: "active",  emailVerified: true,  platformRole: "superadmin" },
-      { id: "u-portal", email: "portal@liziz.com",  password: "portal123",  fullName: "Portal Admin",  status: "active",  emailVerified: true,  platformRole: "admin" },
-      { id: "u-hradm",  email: "hradmin@liziz.com", password: "hradmin123", fullName: "Hana (HR Admin)", status: "active", emailVerified: true, platformRole: "user" },
-      { id: "u-jane",   email: "jane@liziz.com",    password: "jane123",    fullName: "Jane Doe",      status: "active",  emailVerified: true,  platformRole: "user" },
-      { id: "u-bob",    email: "bob@acme.com",      password: "bob123",     fullName: "Bob Tan",       status: "active",  emailVerified: true,  platformRole: "user" },
-      { id: "u-pending",email: "newbie@liziz.com",  password: "newbie123",  fullName: "Newbie Lim",    status: "pending", emailVerified: false, platformRole: "user" }
+      { id: "u-super",  email: "super@liziz.com",   password: "super123",   fullName: "Super Admin",   status: "active",  emailVerified: true,  globalRole: "SUPERADMIN", platformRole: "superadmin" },
+      { id: "u-portal", email: "portal@liziz.com",  password: "portal123",  fullName: "Portal Admin",  status: "active",  emailVerified: true,  globalRole: "ADMIN", platformRole: "admin" },
+      { id: "u-hradm",  email: "hradmin@liziz.com", password: "hradmin123", fullName: "Hana (HR Admin)", status: "active", emailVerified: true, globalRole: "MANAGER", platformRole: "user" },
+      { id: "u-jane",   email: "jane@liziz.com",    password: "jane123",    fullName: "Jane Doe",      status: "active",  emailVerified: true,  globalRole: "MANAGER", platformRole: "user" },
+      { id: "u-bob",    email: "bob@acme.com",      password: "bob123",     fullName: "Bob Tan",       status: "active",  emailVerified: true,  globalRole: "TECHNICIAN", platformRole: "user" },
+      { id: "u-pending",email: "newbie@liziz.com",  password: "newbie123",  fullName: "Newbie Lim",    status: "pending", emailVerified: false, globalRole: "NEW_USER", platformRole: "user" }
     ];
     const entitlements = [
       // Hana is the HR app admin and may approve HR deletions.
@@ -56,13 +76,15 @@
       { id: uid(), userId: "u-jane", appId: "rnd", isAppAdmin: true, canApproveDeletions: true },
       { id: uid(), userId: "u-hradm", appId: "rnd", isAppAdmin: false, canApproveDeletions: false }
     ];
+    // role is the source of truth; level is derived from it.
+    const mkAccess = (userId, appId, companyId, role) => ({ id: uid(), userId, appId, companyId, role, level: roleToLevel(role) });
     const access = [
-      { id: uid(), userId: "u-hradm", appId: "hr", companyId: "c-liziz", level: "admin" },
-      { id: uid(), userId: "u-jane", appId: "hr", companyId: "c-liziz", level: "edit" },
-      { id: uid(), userId: "u-jane", appId: "psm", companyId: "c-acme", level: "view" },
-      { id: uid(), userId: "u-bob", appId: "procurement", companyId: "c-acme", level: "edit" },
-      { id: uid(), userId: "u-jane", appId: "rnd", companyId: "c-liziz", level: "admin" },
-      { id: uid(), userId: "u-hradm", appId: "rnd", companyId: "c-liziz", level: "view" }
+      mkAccess("u-hradm", "hr", "c-liziz", "ADMIN"),
+      mkAccess("u-jane", "hr", "c-liziz", "MANAGER"),
+      mkAccess("u-jane", "psm", "c-acme", "TECHNICIAN"),
+      mkAccess("u-bob", "procurement", "c-acme", "MANAGER"),
+      mkAccess("u-jane", "rnd", "c-liziz", "ADMIN"),
+      mkAccess("u-hradm", "rnd", "c-liziz", "TECHNICIAN")
     ];
     // Which companies each app is "set up" for (central per-app company list).
     const appCompanies = [
@@ -103,7 +125,7 @@
   function writeSession(user) {
     localStorage.setItem(SESSION_KEY, enc({
       sub: user.id, userId: user.id, email: user.email, name: user.fullName,
-      platformRole: user.platformRole, status: user.status,
+      platformRole: user.platformRole, globalRole: user.globalRole || platformRoleToRole(user.platformRole), status: user.status,
       exp: Date.now() + 8 * 3600 * 1000
     }));
   }
@@ -138,7 +160,7 @@
         out[a.id] = {
           isAppAdmin: true, canApproveDeletions: true,
           companies: db.companies.filter((c) => c.status === "active")
-            .map((c) => ({ companyId: c.id, name: c.name, level: "admin" }))
+            .map((c) => ({ companyId: c.id, name: c.name, role: "SUPERADMIN", level: "admin" }))
         };
       });
       return out;
@@ -146,7 +168,10 @@
     db.entitlements.filter((e) => e.userId === userId).forEach((e) => {
       const companies = db.access
         .filter((a) => a.userId === userId && a.appId === e.appId)
-        .map((a) => ({ companyId: a.companyId, name: companyName(db, a.companyId), level: a.level }));
+        .map((a) => {
+          const role = a.role || levelToRole(a.level);
+          return { companyId: a.companyId, name: companyName(db, a.companyId), role, level: a.level || roleToLevel(role) };
+        });
       out[e.appId] = {
         isAppAdmin: e.isAppAdmin,
         canApproveDeletions: user.platformRole === "superadmin" || e.canApproveDeletions,
@@ -158,13 +183,17 @@
 
   function publicUser(db, u) {
     return {
-      id: u.id, email: u.email, fullName: u.fullName, status: u.status,
-      emailVerified: u.emailVerified, platformRole: u.platformRole,
+      id: u.id, email: u.email, userCode: u.userCode || null, fullName: u.fullName, status: u.status,
+      phone: u.phone || null,
+      notifyInApp: u.notifyInApp !== false, notifyEmail: u.notifyEmail !== false,
+      emailVerified: u.emailVerified,
+      globalRole: u.globalRole || platformRoleToRole(u.platformRole),
+      platformRole: u.platformRole,
       entitlements: db.entitlements.filter((e) => e.userId === u.id).map((e) => ({
         appId: e.appId, appName: (db.apps.find((a) => a.id === e.appId) || {}).name,
         isAppAdmin: e.isAppAdmin, canApproveDeletions: e.canApproveDeletions,
         companies: db.access.filter((a) => a.userId === u.id && a.appId === e.appId)
-          .map((a) => ({ companyId: a.companyId, name: companyName(db, a.companyId), level: a.level }))
+          .map((a) => ({ companyId: a.companyId, name: companyName(db, a.companyId), role: a.role || levelToRole(a.level), level: a.level }))
       }))
     };
   }
@@ -186,7 +215,7 @@
   }
 
   const IAM = {
-    APP_IDS, LEVELS,
+    APP_IDS, LEVELS, ROLES: GLOBAL_ROLES,
     LEVEL_LABEL: { view: "View", edit: "Edit", admin: "Admin" },
 
     // ---- AUTH (SWAP: fetch /api/v1/auth/*) -------------------------------
@@ -195,7 +224,8 @@
       email = String(email || "").trim().toLowerCase();
       if (!email || !fullName || !password) return settle(fail("All fields are required."));
       if (db.users.some((u) => u.email.toLowerCase() === email)) return settle(fail("An account with that email already exists."));
-      const user = { id: uid(), email, password, fullName: fullName.trim(), status: "pending", emailVerified: false, platformRole: "user" };
+      // New users land ACTIVE with the default role and NO apps (admin grants access later).
+      const user = { id: uid(), email, password, fullName: fullName.trim(), status: "active", emailVerified: false, globalRole: "NEW_USER", platformRole: "user" };
       db.users.push(user); saveDb(db);
       return settle({ ok: true, verifyToken: user.id }); // mock token = user id
     },
@@ -208,13 +238,38 @@
       return settle({ ok: true });
     },
 
-    async login(email, password) {
+    async login(email, password, _rememberMe) {
       const db = loadDb();
       const u = db.users.find((x) => x.email.toLowerCase() === String(email).trim().toLowerCase());
       if (!u || u.password !== password) return settle(fail("Invalid email or password."));
       if (u.status === "inactive") return settle(fail("This account is deactivated."));
-      writeSession(u); // logs in even if pending, so they can see "awaiting approval"
+      if (!u.emailVerified) return settle(fail("Please verify your email before signing in."));
+      writeSession(u); // mock has no persistent cookie, so rememberMe is a no-op here
       return settle({ user: publicUser(db, u), status: u.status, emailVerified: u.emailVerified });
+    },
+
+    // Public account recovery (SWAP: POST /auth/forgot-password, /auth/reset-password).
+    async forgotPassword(email) {
+      const db = loadDb();
+      email = String(email || "").trim().toLowerCase();
+      const u = db.users.find((x) => x.email.toLowerCase() === email);
+      // Respond the same way whether or not the account exists (no enumeration).
+      const generic = { ok: true, message: "If an account exists for that email, a password reset link has been sent." };
+      if (!u || u.status === "inactive") return settle(generic);
+      return settle({ ...generic, devResetLink: location.pathname + "?reset=" + u.id }); // mock token = user id
+    },
+    async resetPasswordWithToken(token, password) {
+      const db = loadDb();
+      const u = userById(db, token);
+      if (!u) return settle(fail("This reset link is invalid or has expired."));
+      if (!password || String(password).length < 6) return settle(fail("Password must be at least 6 characters."));
+      u.password = password; u.emailVerified = true; saveDb(db);
+      return settle({ ok: true });
+    },
+    async getBranding() {
+      const db = loadDb();
+      const b = (db.settings && db.settings.login_branding) || {};
+      return settle({ companyName: b.companyName || "", message: b.message || "", photoDataUrl: b.photoDataUrl || "", logoDataUrl: b.logoDataUrl || "", shortLogoDataUrl: b.shortLogoDataUrl || "", photoDataUrls: Array.isArray(b.photoDataUrls) ? b.photoDataUrls : [] });
     },
 
     logout() { localStorage.removeItem(SESSION_KEY); },
@@ -228,9 +283,37 @@
       return settle({
         user: publicUser(db, u),
         platformRole: u.platformRole,
+        globalRole: u.globalRole || platformRoleToRole(u.platformRole),
+        roles: GLOBAL_ROLES.slice(),
         status: u.status,
         apps: appsForUser(db, u.id)
       });
+    },
+
+    // Self-service: update own profile / notification prefs.
+    async updateProfile(patch) {
+      const db = loadDb(); const s = sess();
+      if (!s) return settle(fail("Not signed in."));
+      const u = userById(db, s.sub);
+      if (u.status !== "active") return settle(fail("Account not active."));
+      const p = patch || {};
+      if (p.fullName != null) { const v = String(p.fullName).trim(); if (!v) return settle(fail("Name cannot be empty.")); u.fullName = v; }
+      if (p.phone != null) u.phone = String(p.phone).trim() || null;
+      if (p.notifyInApp != null) u.notifyInApp = !!p.notifyInApp;
+      if (p.notifyEmail != null) u.notifyEmail = !!p.notifyEmail;
+      saveDb(db);
+      return settle({ user: publicUser(db, u) });
+    },
+
+    // Self-service: change own password.
+    async changePassword(currentPassword, newPassword) {
+      const db = loadDb(); const s = sess();
+      if (!s) return settle(fail("Not signed in."));
+      const u = userById(db, s.sub);
+      if (String(newPassword || "").length < 6) return settle(fail("New password must be at least 6 characters."));
+      if (u.password !== String(currentPassword || "")) return settle(fail("Current password is incorrect."));
+      u.password = String(newPassword); saveDb(db);
+      return settle({ ok: true });
     },
 
     // Mint a company-scoped access token for one app (what other apps call).
@@ -249,15 +332,19 @@
       } else if (!db.companies.some((c) => c.id === companyId)) {
         return settle(fail("Unknown company."));
       }
-      const level = isSuperUser ? "admin" : acc.level;
+      // role is the source of truth; level/userRole are derived for back-compat.
+      const role = isSuperUser ? "SUPERADMIN" : (acc.role || levelToRole(acc.level));
+      const level = roleToLevel(role);
       const canDelete = isSuperUser || (e && e.canApproveDeletions);
-      const userRole = isSuperUser ? "SUPERADMIN" : (level === "admin" ? "ADMIN" : "MEMBER");
+      const userRole = roleToUserRole(role);
+      // Full per-app company list (role + derived level) so a handoff app (PSM) can reconcile.
+      const companies = (appsForUser(db, u.id)[app] || {}).companies || [];
       return settle({
         userId: u.id, email: u.email, name: u.fullName,
         app, companyId, selectedCompanyId: companyId,
         platformRole: u.platformRole, level,
         isAppAdmin: isSuperUser || (e && e.isAppAdmin), canApproveDeletions: canDelete,
-        userRole, tokenType: "access"
+        userRole, companies, tokenType: "access"
       });
     },
 
@@ -273,6 +360,8 @@
     },
 
     // ---- Portal capability checks ---------------------------------------
+    globalRoles() { return GLOBAL_ROLES.slice().sort((a, b) => a.rank - b.rank); },
+    globalRole() { const s = sess(); if (!s) return null; const u = userById(loadDb(), s.sub); return u ? (u.globalRole || platformRoleToRole(u.platformRole)) : null; },
     isSuperAdmin() { return isSuper(sess()); },
     isPortalAdmin() { return isPortalAdmin(sess()); },
     // Anyone who can open the portal at all (super, portal admin, or any app admin).
@@ -295,19 +384,23 @@
       return settle(users);
     },
 
-    async createUser({ email, fullName, password, platformRole }) {
+    async createUser({ email, fullName, password, globalRole, platformRole, phone }) {
       const db = loadDb(); const s = sess();
       if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
       email = String(email || "").trim().toLowerCase();
       fullName = String(fullName || "").trim();
-      platformRole = platformRole || "user";
+      // globalRole is the source of truth; platformRole is derived from it.
+      const role = globalRole ? String(globalRole).toUpperCase() : platformRoleToRole(platformRole || "user");
+      if (!GLOBAL_ROLE_NAMES.includes(role)) return settle(fail("Invalid role."));
+      const derivedPlatformRole = roleToPlatformRole(role);
+      phone = String(phone || "").trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settle(fail("A valid email is required."));
       if (!fullName) return settle(fail("Full name is required."));
       if (String(password || "").length < 6) return settle(fail("Password must be at least 6 characters."));
-      if (platformRole !== "user" && !isSuper(s)) return settle(fail("Only a Super Admin can create admin accounts."));
+      if (derivedPlatformRole !== "user" && !isSuper(s)) return settle(fail("Only a Super Admin can create admin accounts."));
       if (db.users.some((u) => u.email === email)) return settle(fail("An account with that email already exists."));
-      const u = { id: uid(), email, password, fullName, status: "active", emailVerified: true, platformRole };
-      db.users.push(u); pushAudit(db, s, "create_user", u.id, { email, platformRole }); saveDb(db);
+      const u = { id: uid(), email, password, fullName, phone: phone || null, status: "active", emailVerified: true, globalRole: role, platformRole: derivedPlatformRole };
+      db.users.push(u); pushAudit(db, s, "create_user", u.id, { email, globalRole: role }); saveDb(db);
       return settle(publicUser(db, u));
     },
     async updateUser(userId, patch) {
@@ -332,10 +425,78 @@
       u.password = password; pushAudit(db, s, "reset_password", u.id, null); saveDb(db);
       return settle({ ok: true });
     },
-    async listAudit(limit) {
+    async listAudit(p) {
+      p = p || {}; const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      let rows = (db.audit || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (p.action && p.action !== "all") rows = rows.filter((r) => r.action === p.action);
+      if (p.appId && p.appId !== "all") rows = rows.filter((r) => r.appId === p.appId);
+      if (p.q) { const q = String(p.q).toLowerCase(); rows = rows.filter((r) => JSON.stringify(r).toLowerCase().indexOf(q) >= 0); }
+      const actions = Array.from(new Set((db.audit || []).map((r) => r.action))).sort();
+      const off = p.offset || 0, lim = p.limit || 100;
+      return settle({ items: rows.slice(off, off + lim), total: rows.length, actions });
+    },
+    async loadSettings() {
+      const db = loadDb();
+      if (!this.canUsePortal()) return settle(fail("Admin access required."));
+      return settle(db.settings || {});
+    },
+    async getEmailConfig() {
       const db = loadDb(); const s = sess();
       if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
-      return settle((db.audit || []).slice(0, limit || 100));
+      const c = (db.settings && db.settings.emailConfig) || {};
+      return settle({ enabled: !!c.enabled, host: c.host || "", port: c.port || 587, secure: !!c.secure, user: c.user || "", password: "", hasPassword: !!c.password, fromName: c.fromName || "", fromEmail: c.fromEmail || "" });
+    },
+    async saveEmailConfig(cfg) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      db.settings = db.settings || {};
+      const prev = db.settings.emailConfig || {};
+      const pw = String((cfg && cfg.password) || "");
+      db.settings.emailConfig = {
+        enabled: !!(cfg && cfg.enabled), host: (cfg && cfg.host) || "", port: Number(cfg && cfg.port) || 587, secure: !!(cfg && cfg.secure),
+        user: (cfg && cfg.user) || "", password: pw.length ? pw : (prev.password || ""), fromName: (cfg && cfg.fromName) || "", fromEmail: (cfg && cfg.fromEmail) || ""
+      };
+      saveDb(db);
+      return settle({ ok: true });
+    },
+    async testEmail() {
+      const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      return settle(fail("Test email needs the live backend (mock mode can't send mail)."));
+    },
+    async submitFeedback({ app, category, rating, message }) {
+      const db = loadDb(); const s = sess();
+      if (!s) return settle(fail("Not signed in."));
+      const u = userById(db, s.sub) || {};
+      db.feedback = db.feedback || [];
+      db.feedback.unshift({ id: uid(), appId: app || "unknown", userId: s.sub, email: u.email, name: u.fullName, category: category || "general", rating: rating || null, message: message || "", status: "new", createdAt: new Date().toISOString() });
+      saveDb(db);
+      return settle({ ok: true });
+    },
+    async listFeedback(filter) {
+      const db = loadDb();
+      if (!this.canUsePortal()) return settle(fail("Admin access required."));
+      let list = (db.feedback || []).slice();
+      const f = filter || {};
+      if (f.app && f.app !== "all") list = list.filter((x) => x.appId === f.app);
+      if (f.status && f.status !== "all") list = list.filter((x) => x.status === f.status);
+      if (f.q) { const q = String(f.q).toLowerCase(); list = list.filter((x) => ((x.message || "") + " " + (x.name || "") + " " + (x.email || "")).toLowerCase().includes(q)); }
+      return settle(list);
+    },
+    async setFeedbackStatus(id, status) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      const fb = (db.feedback || []).find((x) => x.id === id); if (!fb) return settle(fail("Not found."));
+      fb.status = status; saveDb(db);
+      return settle({ ok: true });
+    },
+    async saveSetting(key, value) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      db.settings = db.settings || {};
+      db.settings[key] = value; saveDb(db);
+      return settle({ ok: true });
     },
 
     async approveAccount(userId) {
@@ -360,23 +521,101 @@
       if (u.id === s.sub && role !== "superadmin") return settle(fail("You cannot remove your own Super Admin rights."));
       if (u.platformRole === "superadmin" && role !== "superadmin" && db.users.filter((x) => x.platformRole === "superadmin").length <= 1)
         return settle(fail("At least one Super Admin is required."));
-      u.platformRole = role; saveDb(db);
+      u.platformRole = role; u.globalRole = platformRoleToRole(role); saveDb(db);
+      return settle(publicUser(db, u));
+    },
+    // Set a user's global (catalog) role — the source of truth; platformRole derived.
+    async setGlobalRole(userId, role) {
+      const db = loadDb(); const s = sess();
+      if (!isSuper(s)) return settle(fail("Only a Super Admin can change roles."));
+      role = String(role || "").toUpperCase();
+      if (!GLOBAL_ROLE_NAMES.includes(role)) return settle(fail("Invalid role."));
+      const u = userById(db, userId); if (!u) return settle(fail("User not found."));
+      const platformRole = roleToPlatformRole(role);
+      if (u.id === s.sub && platformRole !== "superadmin") return settle(fail("You cannot remove your own Super Admin rights."));
+      if (u.platformRole === "superadmin" && platformRole !== "superadmin" && db.users.filter((x) => x.platformRole === "superadmin").length <= 1)
+        return settle(fail("At least one Super Admin is required."));
+      u.globalRole = role; u.platformRole = platformRole; saveDb(db);
       return settle(publicUser(db, u));
     },
 
     async listCompanies() {
       const db = loadDb();
       if (!this.canUsePortal()) return settle(fail("Admin access required."));
-      return settle(db.companies);
+      // Per-company active/inactive user counts (dedupe users across apps).
+      const statusOf = Object.fromEntries(db.users.map((u) => [u.id, u.status]));
+      const seen = {}, act = {}, inact = {};
+      (db.access || []).forEach((a) => {
+        seen[a.companyId] = seen[a.companyId] || {};
+        if (seen[a.companyId][a.userId]) return;
+        seen[a.companyId][a.userId] = 1;
+        if (statusOf[a.userId] === "active") act[a.companyId] = (act[a.companyId] || 0) + 1;
+        else if (statusOf[a.userId] === "inactive") inact[a.companyId] = (inact[a.companyId] || 0) + 1;
+      });
+      return settle(db.companies.map((c) => ({ ...c, activeUsers: act[c.id] || 0, inactiveUsers: inact[c.id] || 0 })));
     },
-    async createCompany(name) {
+    async createCompany(data) {
       const db = loadDb(); const s = sess();
       if (!isPortalAdmin(s)) return settle(fail("Only a Super Admin or Portal Admin can create companies."));
-      const c = { id: uid(), name: name.trim(), slug: name.trim().toLowerCase().replace(/\s+/g, "-"), status: "active" };
+      const d = typeof data === "string" ? { name: data } : (data || {});
+      const name = String(d.name || "").trim();
+      if (!name) return settle(fail("Company name is required."));
+      const slug = name.toLowerCase().replace(/\s+/g, "-");
+      if (db.companies.some((c) => c.slug === slug)) return settle(fail("A company with that name exists."));
+      const email = String(d.email || "").trim();
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settle(fail("A valid contact email is required."));
+      const c = { id: uid(), name, slug, status: "active", regNo: String(d.regNo || "").trim() || null, address: String(d.address || "").trim() || null, email: email || null, phone: String(d.phone || "").trim() || null };
       db.companies.push(c); saveDb(db);
       return settle(c);
     },
+    async updateCompany(id, patch) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      const c = db.companies.find((x) => x.id === id); if (!c) return settle(fail("Company not found."));
+      const p = patch || {};
+      if (p.name != null) { const name = String(p.name).trim(); if (!name) return settle(fail("Company name is required.")); const slug = name.toLowerCase().replace(/\s+/g, "-"); if (db.companies.some((x) => x.slug === slug && x.id !== id)) return settle(fail("A company with that name exists.")); c.name = name; c.slug = slug; }
+      if (p.regNo != null) c.regNo = String(p.regNo).trim() || null;
+      if (p.address != null) c.address = String(p.address).trim() || null;
+      if (p.email != null) { const email = String(p.email).trim(); if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settle(fail("A valid contact email is required.")); c.email = email || null; }
+      if (p.phone != null) c.phone = String(p.phone).trim() || null;
+      if (p.status != null) { const st = String(p.status); if (!["active", "inactive"].includes(st)) return settle(fail("Invalid status.")); c.status = st; }
+      saveDb(db);
+      return settle(c);
+    },
     async listApps() { return settle(loadDb().apps); },
+    async createApp({ id, name, shortName, icon, url, active }) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      id = String(id || "").trim().toLowerCase();
+      if (!/^[a-z]{1,6}[0-9]{2}$/.test(id)) return settle(fail("App ID must be word initials + a 2-digit series number, e.g. tcbpp01."));
+      if (!String(name || "").trim()) return settle(fail("App name is required."));
+      if (db.apps.some((a) => a.id === id)) return settle(fail("An app with that ID already exists."));
+      const app = { id, name: name.trim(), shortName: (shortName || "").trim() || null, icon: (icon || "box").trim(), url: (url || "").trim(), active: active == null ? true : !!active };
+      db.apps.push(app); saveDb(db);
+      return settle(app);
+    },
+    async updateApp(id, patch) {
+      const db = loadDb(); const s = sess();
+      if (!isPortalAdmin(s)) return settle(fail("Admin access required."));
+      const app = db.apps.find((a) => a.id === id); if (!app) return settle(fail("App not found."));
+      if (patch.name != null) { if (!String(patch.name).trim()) return settle(fail("App name cannot be empty.")); app.name = patch.name.trim(); }
+      if (patch.shortName != null) app.shortName = String(patch.shortName).trim() || null;
+      if (patch.icon != null) app.icon = String(patch.icon).trim() || "box";
+      if (patch.url != null) app.url = String(patch.url).trim();
+      if (patch.active != null) app.active = !!patch.active;
+      saveDb(db);
+      return settle(app);
+    },
+    // Per-app maintenance mode — Super Admin only.
+    async setAppMaintenance(id, maintenanceMode, maintenanceMessage) {
+      const db = loadDb(); const s = sess();
+      if (!isSuper(s)) return settle(fail("Only a Super Admin can change maintenance mode."));
+      const app = db.apps.find((a) => a.id === id); if (!app) return settle(fail("App not found."));
+      app.maintenanceMode = !!maintenanceMode;
+      app.maintenanceMessage = maintenanceMessage || null;
+      saveDb(db);
+      return settle(app);
+    },
 
     // ---- ADMIN: per-app company setup (super admin / portal admin) -------
     // Which companies each app's switcher links to. listAppCompanies returns the
@@ -429,15 +668,17 @@
     },
 
     // ---- ADMIN: company access (Stage 3 — APP ADMIN of that app) ---------
-    async setCompanyAccess(userId, appId, companyId, level) {
+    async setCompanyAccess(userId, appId, companyId, role) {
       const db = loadDb(); const s = sess();
       if (!isAppAdminFor(db, s, appId)) return settle(fail("You are not an admin of this app."));
       if (!entOf(db, userId, appId)) return settle(fail("User is not entitled to this app — a Super Admin must assign the app first."));
       if (!appHasCompany(db, appId, companyId)) return settle(fail("That company is not set up for this app."));
-      if (!LEVELS.includes(level)) return settle(fail("Invalid level."));
+      role = String(role || "").toUpperCase();
+      if (!GLOBAL_ROLE_NAMES.includes(role)) return settle(fail("Invalid role."));
+      const level = roleToLevel(role);
       let a = db.access.find((x) => x.userId === userId && x.appId === appId && x.companyId === companyId);
-      if (!a) { a = { id: uid(), userId, appId, companyId, level }; db.access.push(a); }
-      else a.level = level;
+      if (!a) { a = { id: uid(), userId, appId, companyId, role, level }; db.access.push(a); }
+      else { a.role = role; a.level = level; }
       saveDb(db);
       return settle({ ok: true });
     },
