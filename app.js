@@ -114,7 +114,13 @@
     if (me.status === "pending") return showAwaiting();
     const ret = returnTarget();
     if (ret) return void location.replace(ret); // already signed in → straight back to the app
-    return showLauncher();
+    await showLauncher();
+    // An app (e.g. PSM) repointed its "Settings" here → open Personal settings directly,
+    // so a user's account (profile / password / notifications) is managed in ONE place.
+    if (params.get("settings") === "me") {
+      history.replaceState(null, "", location.pathname); // drop the param so a refresh won't re-open it
+      openPersonalSettings();
+    }
   }
 
   // Apply admin-configured login branding (company name / message / photo) to the login
