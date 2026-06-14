@@ -114,6 +114,7 @@
     async listApps() { return req("GET", "/admin/apps"); },
     async createApp({ id, name, shortName, icon, url, active }) { return req("POST", "/admin/apps", { id, name, shortName, icon, url, active }); },
     async updateApp(id, patch) { return req("PATCH", "/admin/apps/" + encodeURIComponent(id), patch); },
+    async deleteApp(id) { return req("DELETE", "/admin/apps/" + encodeURIComponent(id)); }, // Super Admin; cascades grants
     async setAppMaintenance(id, maintenanceMode, maintenanceMessage) {
       return req("PUT", "/admin/apps/" + encodeURIComponent(id) + "/maintenance", { maintenanceMode: !!maintenanceMode, maintenanceMessage: maintenanceMessage || "" });
     },

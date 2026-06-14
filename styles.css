@@ -108,6 +108,7 @@ button { cursor: pointer; }
 }
 .auth-hero > * { position: relative; z-index: 1; }
 .auth-logo { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+.auth-logo-text { font-size: 26px; line-height: 1.1; }
 .auth-logo-mark { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); font-weight: 800; font-size: 17px; }
 .auth-hero-body { width: 100%; }
 .auth-hero h2, .auth-hero p, .auth-feats { max-width: 470px; }

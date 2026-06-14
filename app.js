@@ -200,9 +200,11 @@
   /* ---- App launcher (home) --------------------------------------------- */
   async function showLauncher() {
     hideAll();
-    apps = await IAM.listApps();   // refresh so live/off changes are reflected
+    // Catalog (names/icons/urls/active) for tile rendering. NEVER let a failure here
+    // blank the launcher — fall back to an empty catalog so the page still renders.
+    try { apps = await IAM.listApps(); } catch (e) { console.error("listApps failed", e); apps = []; }
     let brand = {}; try { brand = await IAM.getBranding(); } catch (e) { /* keep the default badge */ }
-    const catalog = Object.fromEntries(apps.map((a) => [a.id, a]));
+    const catalog = Object.fromEntries((apps || []).map((a) => [a.id, a]));
     // Apps the user can open = entitled AND has >=1 company access AND is live.
     const granted = Object.entries(me.apps)
       .filter(([, info]) => info.companies && info.companies.length > 0)
@@ -571,10 +573,10 @@
          </select>`
       : `<span class="badge">${esc(roleLabel(u.globalRole))}</span>`;
 
-    $("accountsTable").innerHTML = `<thead><tr><th>User</th><th>User ID</th><th>Phone</th><th>Approval Status</th><th>Email Status</th><th>Role</th><th>Actions</th></tr></thead><tbody>${
+    $("accountsTable").innerHTML = `<thead><tr><th>User ID</th><th>User</th><th>Phone</th><th>Approval Status</th><th>Email Status</th><th>Role</th><th>Actions</th></tr></thead><tbody>${
       users.map((u) => `<tr>
-        <th scope="row"><strong>${esc(u.fullName)}</strong><small>${esc(u.email)}</small></th>
         <td>${u.userCode ? `<code class="uid">${esc(u.userCode)}</code>` : '<span class="muted">—</span>'}</td>
+        <th scope="row"><strong>${esc(u.fullName)}</strong><small>${esc(u.email)}</small></th>
         <td>${u.phone ? esc(u.phone) : '<span class="muted">—</span>'}</td>
         <td><span class="badge ${u.status === "active" ? "ok" : u.status === "pending" ? "warn" : "off"}">${u.status}</span></td>
         <td><span class="badge ${u.emailVerified ? "ok" : "off"}">${u.emailVerified ? "Verified" : "Unverified"}</span></td>
@@ -1406,9 +1408,10 @@
     const oneLine = (a) => esc(String(a || "").split("\n").map((x) => x.trim()).filter(Boolean).join(", "));
     const dash = '<span class="muted">—</span>';
     $("companiesTable").innerHTML = `<thead><tr>
-        <th>Company name</th><th>SSM reg</th><th>Address</th><th>Email</th><th>Phone</th><th>Status</th><th>Active users</th><th>Inactive users</th>${canAdmin ? "<th>Actions</th>" : ""}
+        <th>Company ID</th><th>Company name</th><th>SSM reg</th><th>Address</th><th>Email</th><th>Phone</th><th>Status</th><th>Active users</th><th>Inactive users</th>${canAdmin ? "<th>Actions</th>" : ""}
       </tr></thead><tbody>${
       companies.map((c) => `<tr>
+        <td>${c.companyCode ? `<code class="uid">${esc(c.companyCode)}</code>` : dash}</td>
         <td><strong>${esc(c.name)}</strong><small class="muted" style="display:block">${esc(c.slug)}</small></td>
         <td>${c.regNo ? esc(c.regNo) : dash}</td>
         <td>${c.address ? oneLine(c.address) : dash}</td>
@@ -1421,7 +1424,7 @@
           <button class="btn ghost sm" data-edit-co="${esc(c.id)}"><i data-lucide="pencil"></i><span>Edit</span></button>
           <button class="btn ghost sm" data-toggle-co="${esc(c.id)}" data-status="${esc(c.status)}">${c.status === "active" ? "Deactivate" : "Activate"}</button>
         </td>` : ""}
-      </tr>`).join("") || `<tr><td colspan="${canAdmin ? 9 : 8}" class="muted" style="padding:18px">No companies yet. Click “Add company”.</td></tr>`
+      </tr>`).join("") || `<tr><td colspan="${canAdmin ? 10 : 9}" class="muted" style="padding:18px">No companies yet. Click “Add company”.</td></tr>`
     }</tbody>`;
     icons();
 
@@ -1464,12 +1467,19 @@
         <td><small class="muted">${esc(a.url || "—")}</small></td>
         <td>${liveCell(a)}</td>
         ${canSuper ? `<td>${maintCell(a)}</td>` : ""}
-        ${canAdmin ? `<td class="actions"><button class="btn ghost sm" data-edit-app="${esc(a.id)}"><i data-lucide="pencil"></i><span>Edit</span></button></td>` : ""}
+        ${canAdmin ? `<td class="actions"><button class="btn ghost sm" data-edit-app="${esc(a.id)}"><i data-lucide="pencil"></i><span>Edit</span></button>${canSuper ? `<button class="btn ghost sm" data-del-app="${esc(a.id)}" title="Delete app"><i data-lucide="trash-2"></i></button>` : ""}</td>` : ""}
       </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:18px">No apps.</td></tr>`
     }</tbody>`;
-    $("appsTable").onclick = (e) => {
+    $("appsTable").onclick = async (e) => {
       const ed = e.target.closest("[data-edit-app]");
-      if (ed) openAppDrawer(apps.find((a) => a.id === ed.dataset.editApp));
+      if (ed) return openAppDrawer(apps.find((a) => a.id === ed.dataset.editApp));
+      const dl = e.target.closest("[data-del-app]");
+      if (dl) {
+        const a = apps.find((x) => x.id === dl.dataset.delApp) || {};
+        if (!confirm(`Delete "${a.name || dl.dataset.delApp}" from the catalog?\n\nThis removes the app and everyone's access to it. This can't be undone.`)) return;
+        try { await IAM.deleteApp(dl.dataset.delApp); toast("App deleted."); renderApps(); }
+        catch (ex) { toast(ex.message, "bad"); }
+      }
     };
     // Toggle an app live/off — or into/out of maintenance — directly from the table.
     $("appsTable").onchange = async (e) => {
