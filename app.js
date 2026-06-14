@@ -1004,7 +1004,7 @@
     $("drawerTitle").textContent = "Edit — " + u.fullName;
     $("drawerBody").innerHTML = `<div class="form">
       <form class="form" id="editUserForm">
-        <label class="field"><span>User ID</span><input id="euId" type="text" value="${esc(u.id)}" readonly title="System identifier (read-only)" style="opacity:.7;cursor:text"></label>
+        <label class="field"><span>User ID</span><input id="euId" type="text" value="${esc(u.userCode || "—")}" readonly title="Human-readable User ID (read-only)" style="opacity:.7;cursor:text"></label>
         <label class="field"><span>Full name</span><input id="euName" type="text" value="${esc(u.fullName)}" required></label>
         <label class="field"><span>Email</span><input id="euEmail" type="email" value="${esc(u.email)}" required></label>
         <p id="euError" class="error" role="alert" hidden></p>
