@@ -1464,17 +1464,16 @@
       const on = !!a.maintenanceMode;
       return `<label class="switch"><input type="checkbox" data-maint-app="${esc(a.id)}" ${on ? "checked" : ""}><span>${on ? "On" : "Off"}</span></label>`;
     };
-    $("appsTable").innerHTML = `<thead><tr><th>Icon</th><th>App ID</th><th>Name</th><th>Short name</th><th>URL</th><th>Live</th>${canSuper ? "<th>Maintenance</th>" : ""}${canAdmin ? "<th>Actions</th>" : ""}</tr></thead><tbody>${
+    $("appsTable").innerHTML = `<thead><tr><th>Icon</th><th>App ID</th><th>Name</th><th>Short name</th><th>Live</th>${canSuper ? "<th>Maintenance</th>" : ""}${canAdmin ? "<th>Actions</th>" : ""}</tr></thead><tbody>${
       apps.map((a) => `<tr class="${a.active === false ? "is-off" : ""}">
         <td><span class="app-ic"><i data-lucide="${esc(a.icon || "box")}"></i></span></td>
         <td><code class="uid">${esc(a.id)}</code></td>
         <td><strong>${esc(a.name)}</strong>${a.maintenanceMode ? ' <span class="badge warn">Maintenance</span>' : ""}</td>
         <td>${a.shortName ? esc(a.shortName) : `<span class="muted">—</span>`}</td>
-        <td><small class="muted">${esc(a.url || "—")}</small></td>
         <td>${liveCell(a)}</td>
         ${canSuper ? `<td>${maintCell(a)}</td>` : ""}
         ${canAdmin ? `<td class="actions"><button class="btn ghost sm" data-edit-app="${esc(a.id)}"><i data-lucide="pencil"></i><span>Edit</span></button>${canSuper ? `<button class="btn ghost sm" data-del-app="${esc(a.id)}" title="Delete app"><i data-lucide="trash-2"></i></button>` : ""}</td>` : ""}
-      </tr>`).join("") || `<tr><td colspan="8" class="muted" style="padding:18px">No apps.</td></tr>`
+      </tr>`).join("") || `<tr><td colspan="7" class="muted" style="padding:18px">No apps.</td></tr>`
     }</tbody>`;
     $("appsTable").onclick = async (e) => {
       const ed = e.target.closest("[data-edit-app]");
@@ -1513,11 +1512,10 @@
       <label class="field"><span>Full name</span><input id="apName" class="input" value="${editing ? esc(app.name) : ""}" placeholder="e.g. Tex Cycle Biomass Power Plant" required></label>
       <label class="field"><span>App ID <small class="muted">(auto-assigned, permanent)</small></span>
         <input id="apId" class="input" value="${editing ? esc(app.id) : ""}" readonly style="opacity:.7" placeholder="—">
-        ${editing ? "" : `<small class="muted">First letter of each word (up to 6) + a 2-digit series number. Becomes the URL <code id="apIdUrl" class="uid">/…</code>.</small>`}
+        ${editing ? "" : `<small class="muted">First letter of each word (up to 6) + a 2-digit series number. The app opens at <code id="apIdUrl" class="uid">/…</code>.</small>`}
       </label>
       <label class="field"><span>Short name</span><input id="apShort" class="input" value="${editing && app.shortName ? esc(app.shortName) : ""}" placeholder="e.g. PSM"></label>
       <label class="field"><span>Icon (lucide name) <i id="apIconPrev" data-lucide="${editing ? esc(app.icon || "box") : "box"}" style="width:16px;height:16px;vertical-align:middle"></i></span><input id="apIcon" class="input" value="${editing ? esc(app.icon || "box") : "box"}" placeholder="e.g. shopping-cart"></label>
-      <label class="field"><span>URL / path</span><input id="apUrl" class="input" value="${editing ? esc(app.url || "") : ""}" placeholder="e.g. /tcbpp01"></label>
       <label class="switch" style="margin:4px 0"><input type="checkbox" id="apActive" ${editing ? (app.active !== false ? "checked" : "") : "checked"}><span>Live <small class="muted">(show this app in the launcher)</small></span></label>
       ${editing && IAM.isSuperAdmin() ? `
       <hr style="border:none;border-top:1px solid var(--line,#2a2a2a);margin:10px 0 6px">
@@ -1536,14 +1534,11 @@
     });
     // Auto-assign the App ID from the name (create only) + suggest the URL.
     if (!editing) {
-      const urlEl = $("apUrl");
       $("apName").addEventListener("input", () => {
         const id = deriveAppId($("apName").value);
         $("apId").value = id;
         $("apIdUrl").textContent = id ? "/" + id : "/…";
-        if (urlEl.dataset.touched !== "1") urlEl.value = id ? "/" + id : "";
       });
-      urlEl.addEventListener("input", () => { urlEl.dataset.touched = "1"; }); // user took over
     }
     $("appForm").onsubmit = async (e) => {
       e.preventDefault();
@@ -1553,7 +1548,8 @@
         err.textContent = "Enter a full name so an App ID can be auto-assigned.";
         err.hidden = false; return;
       }
-      const payload = { name: $("apName").value.trim(), shortName: $("apShort").value.trim(), icon: $("apIcon").value.trim() || "box", url: $("apUrl").value.trim(), active: $("apActive").checked };
+      const payload = { name: $("apName").value.trim(), shortName: $("apShort").value.trim(), icon: $("apIcon").value.trim() || "box", active: $("apActive").checked };
+      if (!editing) payload.url = "/" + id; // proxied apps always launch at /<id>; the launcher derives this anyway
       try {
         if (editing) {
           await IAM.updateApp(id, payload);
