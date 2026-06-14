@@ -9,7 +9,7 @@
     <script src="iam-config.js?v=11" defer></script>
     <script src="iam.js?v=59" defer></script>
     <script src="iam-api.js?v=57" defer></script>
-    <script src="app.js?v=64" defer></script>
+    <script src="app.js?v=65" defer></script>
   </head>
   <body>
     <!-- Auth (modern split-screen: brand hero + form pane) -->
@@ -127,8 +127,8 @@
           <div class="nav-group" id="navGroupSteps">
             <div class="nav-sec">Setup Steps</div>
             <button class="nav-item" data-view="companies" id="navCompanies" type="button" hidden><i data-lucide="building"></i><span>1 · Company Setup</span></button>
-            <button class="nav-item" data-view="accounts" id="navAccounts" type="button" hidden><i data-lucide="user-check"></i><span>2 · User Account</span></button>
-            <button class="nav-item" data-view="companyAccess" id="navCompanyAccess" type="button" hidden><i data-lucide="building-2"></i><span>3 · Company Access</span></button>
+            <button class="nav-item" data-view="accounts" id="navAccounts" type="button" hidden><i data-lucide="user-check"></i><span>2 · User Global Roles</span></button>
+            <button class="nav-item" data-view="companyAccess" id="navCompanyAccess" type="button" hidden><i data-lucide="building-2"></i><span>3 · Company & App Roles</span></button>
             <button class="nav-item" data-view="appsRoles" id="navAppsRoles" type="button" hidden><i data-lucide="layout-grid"></i><span>4 · User &amp; Apps</span></button>
           </div>
           <div class="nav-group" id="navGroupOther">
@@ -142,7 +142,7 @@
 
       <main class="main">
         <header class="topbar">
-          <div class="page-head"><h1 id="viewTitle" tabindex="-1">User Account</h1><p id="viewSub" class="muted"></p></div>
+          <div class="page-head"><h1 id="viewTitle" tabindex="-1">User Global Roles</h1><p id="viewSub" class="muted"></p></div>
           <div class="topbar-actions">
             <button class="btn ghost icon" id="settingsBtn" type="button" aria-label="Admin settings" title="Admin settings" hidden><i data-lucide="settings"></i></button>
             <div class="user-chip">

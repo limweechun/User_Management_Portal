@@ -522,9 +522,9 @@
   }
 
   const VIEW_META = {
-    accounts: ["User Account", "Approve sign-ups and manage account status. (Super Admin / Portal Admin)"],
+    accounts: ["User Global Roles", "Set each user's global role and manage account status / sign-up approvals. (Super Admin / Portal Admin)"],
     appsRoles: ["User & Apps", "Assign which apps each user may use. (Super Admin / Portal Admin — making an app admin & deletion-approval rights are Super Admin only.)"],
-    companyAccess: ["Company Access", "Pick an app, set up which companies it serves, then assign each entitled user's role per company."],
+    companyAccess: ["Company & App Roles", "Pick an app, set up which companies it serves, then assign each entitled user's role per company."],
     companies: ["Company Setup", "Manage all company profiles and details."],
     apps: ["Organize Apps", "Register and edit the apps in the platform catalog (name, short name, icon, URL)."],
     feedback: ["Feedback Center", "Feedback collected from every app across the platform."],
@@ -1271,7 +1271,7 @@
     $("drawerTitle").textContent = "Apps & roles — " + u.fullName;
     $("drawerBody").innerHTML = `<div class="form">
       <p class="muted small">${canSuper
-        ? "Assign which apps this user may use, who administers each app, and who may approve deletions. App admins then assign companies (in Company Access)."
+        ? "Assign which apps this user may use, who administers each app, and who may approve deletions. App admins then assign companies (in Company & App Roles)."
         : "Assign which apps this user may use. App-admin and deletion-approval rights can only be set by a Super Admin."}</p>
       ${apps.map((a) => {
         const e = u.entitlements.find((x) => x.appId === a.id) || {};
