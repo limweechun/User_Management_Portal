@@ -909,6 +909,7 @@
           <button class="btn" id="testEmailBtn" type="button"><i data-lucide="send"></i><span>Send test</span></button>
           <span id="emMsg" class="small"></span>
         </div>
+        <p class="small muted" style="margin:10px 0 0">“Send test” checks the values shown above — you don’t need to Save first. Leave the password blank to use the saved one.</p>
       </div>`;
     icons();
 
@@ -925,7 +926,14 @@
       const msg = $("emMsg"); msg.style.color = "var(--muted)"; msg.textContent = "Sending…";
       const to = $("emTestTo").value.trim();
       if (!to) { msg.style.color = "#b23b2e"; msg.textContent = "Enter a recipient email."; return; }
-      try { await IAM.testEmail(to); msg.style.color = "#1a8a4a"; msg.textContent = "✓ Test email sent."; }
+      // Test the values CURRENTLY in the form — no save-first needed. A blank password
+      // means "use the saved one" (the field is masked).
+      const config = {
+        enabled: $("emEnabled").checked, host: $("emHost").value.trim(), port: Number($("emPort").value) || 587,
+        secure: $("emSecure").checked, user: $("emUser").value.trim(), password: $("emPass").value,
+        fromName: $("emFromName").value.trim(), fromEmail: $("emFromEmail").value.trim()
+      };
+      try { await IAM.testEmail(to, config); msg.style.color = "#1a8a4a"; msg.textContent = "✓ Test email sent."; }
       catch (ex) { msg.style.color = "#b23b2e"; msg.textContent = "✗ " + ex.message; }
     };
   }

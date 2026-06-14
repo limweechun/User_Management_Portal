@@ -92,7 +92,7 @@
     async saveSetting(key, value) { return req("PUT", "/admin/settings/" + encodeURIComponent(key), { value }); },
     async getEmailConfig() { return req("GET", "/admin/email-config"); },
     async saveEmailConfig(cfg) { return req("PUT", "/admin/email-config", cfg); },
-    async testEmail(to) { return req("POST", "/admin/email-config/test", { to }); },
+    async testEmail(to, config) { return req("POST", "/admin/email-config/test", config ? { to, config } : { to }); },
     async submitFeedback({ app, category, rating, message }) { return req("POST", "/feedback", { app, category, rating, message }); },
     async listFeedback(filter) {
       const f = filter || {};
