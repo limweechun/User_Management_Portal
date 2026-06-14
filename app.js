@@ -244,9 +244,15 @@
       </div>`;
       }
       const callback = HANDOFF_CALLBACK[a.id];
+      // Proxied apps ALWAYS launch at the gateway mount "/<id>". Ignore a stale/typo'd
+      // relative URL (e.g. "/procure" for p01) so a bad catalog value can't break the
+      // tile — only honor a same-app deep link ("/<id>/..."). A full http(s):// URL is an
+      // external app, already handled via the token branch above.
+      const mount = "/" + a.id;
+      const internal = a.url === mount || (a.url || "").startsWith(mount + "/") ? a.url : mount;
       const href = a._token
         ? `${esc(callback || a.url)}#token=${a._token}`
-        : esc(a.url || ("/" + a.id));
+        : esc(internal);
       return `
       <a class="tile" href="${href}">
         <span class="tile-icon"><i data-lucide="${esc(a.icon)}"></i></span>
