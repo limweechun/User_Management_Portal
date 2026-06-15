@@ -45,6 +45,15 @@
     isAuthenticated() { return !!_me; },
     // The global role catalog (sorted low→high rank) + this user's role.
     globalRoles() { return (_me && Array.isArray(_me.roles) ? _me.roles.slice() : []).sort((a, b) => a.rank - b.rank); },
+    // The catalog for a specific app: global roles + that app's scoped titles
+    // (e.g. "Project Manager"), sorted by tier. Falls back to globals on error.
+    async rolesForApp(appId) {
+      if (!appId) return this.globalRoles();
+      try {
+        const rows = await req("GET", "/roles?app=" + encodeURIComponent(appId));
+        return (Array.isArray(rows) ? rows : []).sort((a, b) => (a.tier || 99) - (b.tier || 99) || b.rank - a.rank);
+      } catch (e) { return this.globalRoles(); }
+    },
     globalRole() { return _me ? _me.globalRole : null; },
     isSuperAdmin() { return !!_me && _me.platformRole === "superadmin"; },
     isPortalAdmin() { return !!_me && (_me.platformRole === "superadmin" || _me.platformRole === "admin"); },

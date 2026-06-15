@@ -972,16 +972,24 @@
   // Build <option>s from the global role catalog (IAM.globalRoles()). `selected`
   // is the current role name; opts.hideElevated drops SUPERADMIN/ADMIN (used when
   // the actor isn't a Super Admin, since those roles confer portal authority).
+  // Ladder labels for the per-app picker's <optgroup>s.
+  const TIER_LABEL = { 1: "L1 · Super Admin", 2: "L2 · Admin", 3: "L3 · Director", 4: "L4 · Manager", 5: "L5 · Executive / Engineer", 6: "L6 · Project Executive", 7: "L7 · Supervisor", 8: "L8 · Technician / Operator", 9: "L9 · Mill Executive", 10: "L10 · Client", 11: "L11 · New User" };
   function roleOptionsHtml(selected, opts) {
     const o = opts || {};
-    let roles = (IAM.globalRoles && IAM.globalRoles()) || [];
+    let roles = o.roles || (IAM.globalRoles && IAM.globalRoles()) || [];
     if (!roles.length) {
       roles = [["NEW_USER", "New User"], ["TECHNICIAN", "Technician"], ["SUPERVISOR", "Supervisor"], ["EXECUTIVE", "Executive"], ["MANAGER", "Manager"], ["DIRECTOR", "Director"], ["ADMIN", "Admin"], ["SUPERADMIN", "Super Admin"]].map(([name, label], i) => ({ name, label, rank: i }));
     }
-    return roles
-      .filter((r) => !(o.hideElevated && (r.name === "SUPERADMIN" || r.name === "ADMIN")))
-      .map((r) => `<option value="${esc(r.name)}" ${selected === r.name ? "selected" : ""}>${esc(r.label)}</option>`)
-      .join("");
+    roles = roles.filter((r) => !(o.hideElevated && (r.name === "SUPERADMIN" || r.name === "ADMIN")));
+    const opt = (r) => `<option value="${esc(r.name)}" ${selected === r.name ? "selected" : ""}>${esc(r.label)}</option>`;
+    if (o.group) {
+      const byTier = {};
+      roles.forEach((r) => { const t = r.tier || 99; (byTier[t] = byTier[t] || []).push(r); });
+      return Object.keys(byTier).sort((a, b) => a - b)
+        .map((t) => `<optgroup label="${esc(TIER_LABEL[t] || ("Tier " + t))}">${byTier[t].map(opt).join("")}</optgroup>`)
+        .join("");
+    }
+    return roles.map(opt).join("");
   }
   // Display label for a global role name.
   function roleLabel(name) {
@@ -1411,8 +1419,10 @@
       icons(); return;
     }
     const users = (await IAM.listUsers({})).filter((u) => u.status === "active" && u.entitlements.some((e) => e.appId === currentApp));
-    // A per-company ROLE picker (global catalog) with a leading "No Access" option.
-    const roleOpts = (cur) => `<option value="none"${(!cur || cur === "none") ? " selected" : ""}>No Access</option>` + roleOptionsHtml(cur);
+    // A per-company ROLE picker: global roles + THIS app's scoped titles (e.g.
+    // "Project Manager"), grouped by ladder tier, with a leading "No Access" option.
+    const appRoles = await IAM.rolesForApp(currentApp);
+    const roleOpts = (cur) => `<option value="none"${(!cur || cur === "none") ? " selected" : ""}>No Access</option>` + roleOptionsHtml(cur, { roles: appRoles, group: true });
 
     $("companyAccessTable").innerHTML = `<thead><tr><th>User</th>${appCos.map((c) => `<th>${esc(c.name)}</th>`).join("")}</tr></thead><tbody>${
       users.map((u) => {
