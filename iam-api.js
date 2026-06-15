@@ -93,6 +93,7 @@
     async getEmailConfig() { return req("GET", "/admin/email-config"); },
     async saveEmailConfig(cfg) { return req("PUT", "/admin/email-config", cfg); },
     async testEmail(to, config) { return req("POST", "/admin/email-config/test", config ? { to, config } : { to }); },
+    async verifyEmailConfig() { return req("POST", "/admin/email-config/verify"); },
     async submitFeedback({ app, category, rating, message }) { return req("POST", "/feedback", { app, category, rating, message }); },
     async listFeedback(filter) {
       const f = filter || {};

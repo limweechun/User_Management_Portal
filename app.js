@@ -891,6 +891,7 @@
     const ec = await IAM.getEmailConfig().catch(() => ({ enabled: false, host: "", port: 587, secure: false, user: "", hasPassword: false, fromName: "", fromEmail: "" }));
     host.innerHTML = `
       <p class="muted">Global SMTP settings the platform uses to send email (verification, password resets, notifications). Stored centrally; the password is never shown back.</p>
+      <div id="emDiag" class="small" style="margin:0 0 14px;padding:10px 12px;border-radius:8px;background:var(--surface-soft,#eef2ef);line-height:1.7">Checking the saved SMTP connection…</div>
       <div class="setting-card">
         <label class="switch" style="margin-bottom:12px"><input type="checkbox" id="emEnabled" ${ec.enabled ? "checked" : ""}><span>Enable email sending</span></label>
         <div class="email-grid">
@@ -907,11 +908,40 @@
           <span style="width:1px;height:24px;background:var(--line);margin:0 4px"></span>
           <input class="input sm" id="emTestTo" type="email" placeholder="send test to…" style="max-width:220px">
           <button class="btn" id="testEmailBtn" type="button"><i data-lucide="send"></i><span>Send test</span></button>
+          <button class="btn" id="emCheckBtn" type="button"><i data-lucide="plug-zap"></i><span>Check connection</span></button>
           <span id="emMsg" class="small"></span>
         </div>
         <p class="small muted" style="margin:10px 0 0">“Send test” checks the values shown above — you don’t need to Save first. Leave the password blank to use the saved one.</p>
       </div>`;
     icons();
+
+    // Diagnose the SAVED SMTP config (what forgot-password / verification actually use):
+    // shows enabled/host/port/auth state + a live connect-and-login result. Auto-runs on
+    // open so the real status is visible without sending anything.
+    const runEmailDiag = async () => {
+      const box = $("emDiag"); if (!box) return;
+      box.style.color = "var(--muted)"; box.textContent = "Checking the saved SMTP connection…";
+      try {
+        const d = await IAM.verifyEmailConfig();
+        if (!d.saved) { box.style.color = "#b23b2e"; box.innerHTML = "✗ No SMTP host saved yet — fill in the form and click <strong>Save email settings</strong>."; return; }
+        const ok = d.verify && d.verify.ok;
+        const rows = [
+          d.enabled ? "✓ Email sending is <strong>ON</strong>"
+                    : "✗ Email sending is <strong>OFF</strong> — tick “Enable email sending” then <strong>Save</strong>, or no real emails go out (even if “Send test” works).",
+          `Server: <strong>${esc(d.host)}:${esc(String(d.port))}</strong> ${d.secure ? "(SSL/TLS)" : "(STARTTLS)"}`,
+          `Login: <strong>${esc(d.user || "— none set —")}</strong> · password saved: <strong>${d.hasPassword ? "yes" : "no"}</strong>`,
+          `From: <strong>${esc(d.fromEmail || "—")}</strong>`,
+          ok ? '<strong style="color:#1a8a4a">✓ Connection + login to the mail server SUCCEEDED.</strong>'
+             : `<strong style="color:#b23b2e">✗ Connection / login FAILED: ${esc((d.verify && d.verify.error) || "unknown error")}</strong>`
+        ];
+        box.style.color = "var(--ink,#17201d)";
+        box.innerHTML = rows.join("<br>");
+      } catch (ex) {
+        box.style.color = "#b23b2e"; box.textContent = "✗ Could not run the check: " + (ex.message || ex);
+      }
+    };
+    runEmailDiag();
+    $("emCheckBtn").onclick = runEmailDiag;
 
     $("saveEmailBtn").onclick = async () => {
       const cfg = {
