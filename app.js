@@ -432,6 +432,11 @@
     $("meAvatar").textContent = initials(me.user.fullName);
     $("meName").textContent = me.user.fullName;
     $("meEmail").textContent = me.user.email;
+    // Platform-role badge on the account chip, matching the other apps' top bars.
+    const PR_LABEL = { superadmin: "Super Admin", admin: "Admin", user: "User" };
+    const pr = me.platformRole || (me.user && me.user.platformRole) || "user";
+    $("meRole").textContent = PR_LABEL[pr] || pr;
+    $("meRole").hidden = false;
 
     const canPortalAdmin = IAM.isPortalAdmin();
     const canSuper = IAM.isSuperAdmin();

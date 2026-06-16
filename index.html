@@ -9,7 +9,7 @@
     <script src="iam-config.js?v=11" defer></script>
     <script src="iam.js?v=59" defer></script>
     <script src="iam-api.js?v=60" defer></script>
-    <script src="app.js?v=72" defer></script>
+    <script src="app.js?v=73" defer></script>
   </head>
   <body>
     <!-- Auth (modern split-screen: brand hero + form pane) -->
@@ -148,6 +148,7 @@
             <button class="btn ghost icon" id="settingsBtn" type="button" aria-label="Admin settings" title="Admin settings" hidden><i data-lucide="settings"></i></button>
             <div class="user-chip">
               <button class="chip-btn" id="meSettingsBtn" type="button" aria-label="Personal settings" title="Personal settings">
+                <span id="meRole" style="border-radius:999px;background:#eef4f1;padding:3px 9px;font-size:12px;font-weight:800;color:#0b4f4a;white-space:nowrap;text-transform:capitalize" hidden></span>
                 <span class="avatar" id="meAvatar">--</span>
                 <span class="meta"><strong id="meName">--</strong><small id="meEmail">--</small></span>
                 <i data-lucide="settings-2" class="chip-cog"></i>
