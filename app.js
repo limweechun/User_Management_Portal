@@ -472,6 +472,7 @@
     });
     $("signOutBtn").addEventListener("click", doLogout);
     $("meSettingsBtn").addEventListener("click", openPersonalSettings);
+    $("feedbackBtn").addEventListener("click", openFeedbackDrawer);
     $("newCompanyBtn").addEventListener("click", () => openCompanyDrawer(null));
     bindDrawer();
     $("accountsFilter").addEventListener("click", (e) => {
