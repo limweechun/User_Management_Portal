@@ -19,21 +19,21 @@
 
   // Global role catalog (mirrors iam-service/src/constants/roles.ts). The portal
   // assigns roles; platformRole/level/userRole are DERIVED for back-compat.
+  // Collapsed 8 -> 5 (mirrors iam-service Phase A). The retired generic tiers
+  // (Technician / Supervisor / Executive / Manager) folded into Ordinary User;
+  // seniority for approvals now comes from the per-app role title's ladder tier.
   const GLOBAL_ROLES = [
     { name: "NEW_USER", label: "New User", rank: 0, description: "Newly added account awaiting a role assignment.", isSystem: true },
-    { name: "TECHNICIAN", label: "Technician", rank: 1, description: "Field / operational user with limited access.", isSystem: true },
-    { name: "SUPERVISOR", label: "Supervisor", rank: 2, description: "Supervises a team with standard write access.", isSystem: true },
-    { name: "EXECUTIVE", label: "Executive", rank: 3, description: "Operational staff with standard write access.", isSystem: true },
-    { name: "MANAGER", label: "Manager", rank: 4, description: "Manages day-to-day operations, approvals and team output.", isSystem: true },
-    { name: "DIRECTOR", label: "Director", rank: 5, description: "Senior management. Broad write access including financial visibility.", isSystem: true },
-    { name: "ADMIN", label: "Admin", rank: 6, description: "Administers the portal and apps. Broad authority, but cannot manage Super Admins.", isSystem: true },
-    { name: "SUPERADMIN", label: "Super Admin", rank: 7, description: "Full control across the platform and every app.", isSystem: true }
+    { name: "ORDINARY_USER", label: "Ordinary User", rank: 1, description: "Standard signed-in user. Platform access is view-only by default; real capability comes from the per-app role assigned per company.", isSystem: true },
+    { name: "DIRECTOR", label: "Director", rank: 2, description: "Senior management. Broad write access including financial visibility.", isSystem: true },
+    { name: "ADMIN", label: "Admin", rank: 3, description: "Administers the portal and apps. Broad authority, but cannot manage Super Admins.", isSystem: true },
+    { name: "SUPERADMIN", label: "Super Admin", rank: 4, description: "Full control across the platform and every app.", isSystem: true }
   ];
   const GLOBAL_ROLE_NAMES = GLOBAL_ROLES.map((r) => r.name);
   const roleToPlatformRole = (r) => (r === "SUPERADMIN" ? "superadmin" : r === "ADMIN" ? "admin" : "user");
-  const roleToLevel = (r) => ((r === "SUPERADMIN" || r === "ADMIN") ? "admin" : (r === "DIRECTOR" || r === "MANAGER") ? "edit" : "view");
+  const roleToLevel = (r) => ((r === "SUPERADMIN" || r === "ADMIN") ? "admin" : (r === "DIRECTOR") ? "edit" : "view");
   const roleToUserRole = (r) => (r === "SUPERADMIN" ? "SUPERADMIN" : r === "ADMIN" ? "ADMIN" : "MEMBER");
-  const levelToRole = (l) => (l === "admin" ? "ADMIN" : l === "edit" ? "MANAGER" : "TECHNICIAN");
+  const levelToRole = (l) => (l === "admin" ? "ADMIN" : "ORDINARY_USER"); // edit/view -> ORDINARY_USER (MANAGER/TECHNICIAN retired)
   const platformRoleToRole = (p) => (p === "superadmin" ? "SUPERADMIN" : p === "admin" ? "ADMIN" : "NEW_USER");
 
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.floor(Math.random() * 1e6));
@@ -59,9 +59,9 @@
     const users = [
       { id: "u-super",  email: "super@liziz.com",   password: "super123",   fullName: "Super Admin",   status: "active",  emailVerified: true,  globalRole: "SUPERADMIN", platformRole: "superadmin" },
       { id: "u-portal", email: "portal@liziz.com",  password: "portal123",  fullName: "Portal Admin",  status: "active",  emailVerified: true,  globalRole: "ADMIN", platformRole: "admin" },
-      { id: "u-hradm",  email: "hradmin@liziz.com", password: "hradmin123", fullName: "Hana (HR Admin)", status: "active", emailVerified: true, globalRole: "MANAGER", platformRole: "user" },
-      { id: "u-jane",   email: "jane@liziz.com",    password: "jane123",    fullName: "Jane Doe",      status: "active",  emailVerified: true,  globalRole: "MANAGER", platformRole: "user" },
-      { id: "u-bob",    email: "bob@acme.com",      password: "bob123",     fullName: "Bob Tan",       status: "active",  emailVerified: true,  globalRole: "TECHNICIAN", platformRole: "user" },
+      { id: "u-hradm",  email: "hradmin@liziz.com", password: "hradmin123", fullName: "Hana (HR Admin)", status: "active", emailVerified: true, globalRole: "ORDINARY_USER", platformRole: "user" },
+      { id: "u-jane",   email: "jane@liziz.com",    password: "jane123",    fullName: "Jane Doe",      status: "active",  emailVerified: true,  globalRole: "ORDINARY_USER", platformRole: "user" },
+      { id: "u-bob",    email: "bob@acme.com",      password: "bob123",     fullName: "Bob Tan",       status: "active",  emailVerified: true,  globalRole: "ORDINARY_USER", platformRole: "user" },
       { id: "u-pending",email: "newbie@liziz.com",  password: "newbie123",  fullName: "Newbie Lim",    status: "pending", emailVerified: false, globalRole: "NEW_USER", platformRole: "user" }
     ];
     const entitlements = [

@@ -984,7 +984,7 @@
     const o = opts || {};
     let roles = o.roles || (IAM.globalRoles && IAM.globalRoles()) || [];
     if (!roles.length) {
-      roles = [["NEW_USER", "New User"], ["TECHNICIAN", "Technician"], ["SUPERVISOR", "Supervisor"], ["EXECUTIVE", "Executive"], ["MANAGER", "Manager"], ["DIRECTOR", "Director"], ["ADMIN", "Admin"], ["SUPERADMIN", "Super Admin"]].map(([name, label], i) => ({ name, label, rank: i }));
+      roles = [["NEW_USER", "New User"], ["ORDINARY_USER", "Ordinary User"], ["DIRECTOR", "Director"], ["ADMIN", "Admin"], ["SUPERADMIN", "Super Admin"]].map(([name, label], i) => ({ name, label, rank: i }));
     }
     roles = roles.filter((r) => !(o.hideElevated && (r.name === "SUPERADMIN" || r.name === "ADMIN")));
     const opt = (r) => `<option value="${esc(r.name)}" ${selected === r.name ? "selected" : ""}>${esc(r.label)}</option>`;
