@@ -209,7 +209,9 @@
     const granted = Object.entries(me.apps)
       .filter(([, info]) => info.companies && info.companies.length > 0)
       .map(([id]) => catalog[id]).filter(Boolean)
-      .filter((a) => a.active !== false);
+      .filter((a) => a.active !== false)
+      // Show the tiles in alphanumeric order by app name (natural sort, case-insensitive).
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { numeric: true, sensitivity: "base" }));
 
     // Apps that run their OWN backend session (not the shared cookie) need a
     // launch token handed to a specific callback route, even when same-origin.
