@@ -1626,14 +1626,35 @@
     $("drawerBody").innerHTML = `<form class="form" id="companyForm">
       <label class="field"><span>Company name</span><input id="coName" type="text" autocomplete="off" value="${esc(c.name || "")}" placeholder="e.g. True Eco Sdn Bhd" required></label>
       <label class="field"><span>SSM registration <small class="muted" style="font-weight:600">(optional)</small></span><input id="coReg" type="text" autocomplete="off" value="${esc(c.regNo || "")}" placeholder="Business registration no."></label>
-      <div class="field"><span>Address <small class="muted" style="font-weight:600">(optional)</small></span>
-        <input id="coAddr1" class="input" type="text" value="${esc(addr[0] || "")}" placeholder="Address line 1" style="margin-bottom:6px">
-        <input id="coAddr2" class="input" type="text" value="${esc(addr[1] || "")}" placeholder="Address line 2" style="margin-bottom:6px">
-        <input id="coAddr3" class="input" type="text" value="${esc(addr[2] || "")}" placeholder="Address line 3">
+      <div class="field"><span>Logo <small class="muted" style="font-weight:600">(printed on payslips / EA letterheads)</small></span>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <img id="coLogoImg" src="${esc(c.logo || "")}" alt="" style="max-height:48px;max-width:150px;object-fit:contain;border:1px solid var(--line,#2a2a2a);border-radius:8px;padding:4px;background:#fff;${c.logo ? "" : "display:none"}">
+          <label class="btn"><span>Upload logo</span><input id="coLogoFile" type="file" accept="image/*" hidden></label>
+          <button type="button" id="coLogoRemove" class="btn" style="${c.logo ? "" : "display:none"}">Remove</button>
+        </div>
+        <p id="coLogoErr" class="error" role="alert" hidden style="margin-top:6px"></p>
+      </div>
+      <input id="coAddr1" class="input" type="text" value="${esc(addr[0] || "")}" placeholder="Address line 1" style="margin-bottom:6px">
+      <input id="coAddr2" class="input" type="text" value="${esc(c.address2 || addr[1] || "")}" placeholder="Address line 2" style="margin-bottom:6px">
+      <div class="field-row">
+        <label class="field"><span>Postcode</span><input id="coPost" type="text" autocomplete="off" value="${esc(c.postcode || "")}"></label>
+        <label class="field"><span>City</span><input id="coCity" type="text" autocomplete="off" value="${esc(c.city || "")}"></label>
+        <label class="field"><span>State</span><input id="coState" type="text" autocomplete="off" value="${esc(c.state || "")}"></label>
       </div>
       <div class="field-row">
-        <label class="field"><span>Contact email <small class="muted" style="font-weight:600">(optional)</small></span><input id="coEmail" type="email" autocomplete="off" value="${esc(c.email || "")}" placeholder="name@company.com"></label>
-        <label class="field"><span>Contact phone <small class="muted" style="font-weight:600">(optional)</small></span><input id="coPhone" type="tel" autocomplete="off" value="${esc(c.phone || "")}" placeholder="e.g. +60 3-1234 5678"></label>
+        <label class="field"><span>Contact email</span><input id="coEmail" type="email" autocomplete="off" value="${esc(c.email || "")}" placeholder="name@company.com"></label>
+        <label class="field"><span>Contact phone</span><input id="coPhone" type="tel" autocomplete="off" value="${esc(c.phone || "")}" placeholder="+60 3-1234 5678"></label>
+      </div>
+      <label class="field"><span>Website</span><input id="coWeb" type="text" autocomplete="off" value="${esc(c.website || "")}" placeholder="www.company.com"></label>
+      <div class="field"><span>Employer numbers <small class="muted" style="font-weight:600">(for the EA form / CP8D / EPF·SOCSO·EIS files)</small></span>
+        <div class="field-row">
+          <label class="field"><span>LHDN E-number</span><input id="coTax" type="text" autocomplete="off" value="${esc(c.incomeTaxNo || "")}" placeholder="E 1234567890"></label>
+          <label class="field"><span>EPF (KWSP)</span><input id="coEpf" type="text" autocomplete="off" value="${esc(c.epfNo || "")}"></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>SOCSO (PERKESO)</span><input id="coSocso" type="text" autocomplete="off" value="${esc(c.socsoNo || "")}"></label>
+          <label class="field"><span>EIS</span><input id="coEis" type="text" autocomplete="off" value="${esc(c.eisNo || "")}"></label>
+        </div>
       </div>
       <p id="coError" class="error" role="alert" hidden></p>
       <button class="btn primary block" type="submit"><i data-lucide="${editing ? "save" : "plus"}"></i><span>${editing ? "Update company" : "Create company"}</span></button>
@@ -1641,13 +1662,63 @@
     $("drawerBackdrop").hidden = false; icons();
     $("coName").focus();
 
+    // Logo: resize client-side to a small data URL. logoData: undefined = unchanged, null = removed, string = new.
+    let logoData;
+    $("coLogoFile").onchange = () => {
+      const f = $("coLogoFile").files && $("coLogoFile").files[0];
+      const lerr = $("coLogoErr"); lerr.hidden = true;
+      if (!f) return;
+      if (!f.type.startsWith("image/")) { lerr.textContent = "Please choose an image file (PNG, JPEG…)."; lerr.hidden = false; return; }
+      if (f.size > 2 * 1024 * 1024) { lerr.textContent = "Image too large — please use one under 2 MB."; lerr.hidden = false; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, 400 / Math.max(img.width, img.height));
+          const cv = document.createElement("canvas");
+          cv.width = Math.max(1, Math.round(img.width * scale));
+          cv.height = Math.max(1, Math.round(img.height * scale));
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          let out = cv.toDataURL("image/png");
+          if (out.length > 300000) out = cv.toDataURL("image/jpeg", 0.85);
+          logoData = out;
+          const im = $("coLogoImg"); im.src = out; im.style.display = "";
+          $("coLogoRemove").style.display = "";
+        };
+        img.onerror = () => { lerr.textContent = "That file isn't a valid image."; lerr.hidden = false; };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(f);
+    };
+    $("coLogoRemove").onclick = () => {
+      logoData = null;
+      const im = $("coLogoImg"); im.src = ""; im.style.display = "none";
+      $("coLogoRemove").style.display = "none";
+      $("coLogoFile").value = "";
+    };
+
     $("companyForm").onsubmit = async (e) => {
       e.preventDefault();
       const err = $("coError"); err.hidden = true;
       const name = $("coName").value.trim();
       if (!name) { err.textContent = "Company name is required."; err.hidden = false; return; }
-      const address = [$("coAddr1").value, $("coAddr2").value, $("coAddr3").value].map((s) => s.trim()).filter(Boolean).join("\n");
-      const payload = { name, regNo: $("coReg").value.trim(), address, email: $("coEmail").value.trim(), phone: $("coPhone").value.trim() };
+      const payload = {
+        name,
+        regNo: $("coReg").value.trim(),
+        address: $("coAddr1").value.trim(),
+        address2: $("coAddr2").value.trim(),
+        postcode: $("coPost").value.trim(),
+        city: $("coCity").value.trim(),
+        state: $("coState").value.trim(),
+        email: $("coEmail").value.trim(),
+        phone: $("coPhone").value.trim(),
+        website: $("coWeb").value.trim(),
+        incomeTaxNo: $("coTax").value.trim(),
+        epfNo: $("coEpf").value.trim(),
+        socsoNo: $("coSocso").value.trim(),
+        eisNo: $("coEis").value.trim()
+      };
+      if (logoData !== undefined) payload.logo = logoData; // only when changed/removed; else IAM keeps it
       try {
         if (editing) await IAM.updateCompany(c.id, payload);
         else await IAM.createCompany(payload);
