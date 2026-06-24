@@ -62,11 +62,21 @@ export function Tier3AccessPanel({
 
   const setAccess = (app: App, value: Access) => {
     const ent = user.entitlements.find((e) => e.appId === app.id)
-    if (value === 'appadmin' && !requireSuperAdmin(me, toast)) return
+    // Granting App Admin OR demoting away from it crosses the app-wide admin boundary, which is
+    // Super-Admin-only on the server — gate it client-side either way for a friendly toast.
+    const crossesAdmin = value === 'appadmin' || !!ent?.isAppAdmin
+    if (crossesAdmin && !requireSuperAdmin(me, toast)) return
     run('Updated ' + (app.shortName || app.name), async () => {
       if (value === 'none') {
-        await iam.removeCompanyAccess(user.id, app.id, company.id)
-        if (ent && !ent.isAppAdmin && ent.companies.length <= 1) await iam.setEntitlement(user.id, app.id, { entitled: false })
+        // App Admin is a single app-wide flag (no company rows), so "No Access" on an app admin
+        // must fully revoke the entitlement (the server cascades all access) — otherwise the
+        // orphaned entitlement persists and the dropdown reverts to App Admin.
+        if (ent?.isAppAdmin) {
+          await iam.setEntitlement(user.id, app.id, { entitled: false })
+        } else {
+          await iam.removeCompanyAccess(user.id, app.id, company.id)
+          if (ent && ent.companies.length <= 1) await iam.setEntitlement(user.id, app.id, { entitled: false })
+        }
       } else {
         const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
         await iam.setEntitlement(user.id, app.id, { entitled: true, isAppAdmin: value === 'appadmin' })
@@ -124,10 +134,10 @@ export function Tier3AccessPanel({
                     <div className="truncate text-xs font-medium text-slate-700">{app.name}</div>
                     <div className="truncate text-[10px] text-slate-400">{app.shortName || app.id}</div>
                   </div>
-                  <StyledSelect value={acc} onChange={(v) => setAccess(app, v as Access)} className="w-32">
+                  <StyledSelect value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={acc === 'appadmin' && !superGate} className="w-44">
                     <option value="none">No Access</option>
                     <option value="user">User</option>
-                    <option value="appadmin">App Admin</option>
+                    {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin (all companies)</option> : null}
                   </StyledSelect>
                 </div>
                 {acc !== 'none' ? (

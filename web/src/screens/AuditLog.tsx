@@ -109,17 +109,7 @@ export function AuditLog() {
       toast('No audit entries to export.', 'bad')
       return
     }
-    const cols: (keyof AuditRow)[] = [
-      'createdAt',
-      'action',
-      'actorName',
-      'actorUserId',
-      'targetName',
-      'targetUserId',
-      'appId',
-      'companyId',
-      'detail',
-    ]
+    const cols: (keyof AuditRow)[] = ['createdAt', 'action', 'actor', 'target', 'appId', 'companyId', 'detail']
     const lines = [cols.join(',')].concat(
       rows.map((r) => cols.map((c) => csvCell(r[c])).join(',')),
     )
@@ -240,10 +230,10 @@ export function AuditLog() {
                       </span>
                     </td>
                     <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600">
-                      {r.actorName || r.actorUserId || '—'}
+                      {r.actor || '—'}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600">
-                      {r.targetName || r.targetUserId || '—'}
+                      {r.target || '—'}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">
                       {r.appId || '—'}
@@ -299,8 +289,8 @@ export function AuditLog() {
                 </span>
               }
             />
-            <DetailRow label="Actor" value={selected.actorName || selected.actorUserId || '—'} />
-            <DetailRow label="Target" value={selected.targetName || selected.targetUserId || '—'} />
+            <DetailRow label="Actor" value={selected.actor || '—'} />
+            <DetailRow label="Target" value={selected.target || '—'} />
             <DetailRow label="App" value={selected.appId || '—'} />
             <DetailRow label="Company" value={selected.companyId || '—'} />
             <div className="mt-3">

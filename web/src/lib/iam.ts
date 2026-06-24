@@ -125,10 +125,8 @@ export interface AuditRow {
   id?: string
   createdAt: string
   action: string
-  actorUserId?: string
-  actorName?: string
-  targetUserId?: string
-  targetName?: string
+  actor?: string // resolved actor name/email (server-side)
+  target?: string // resolved target name/email (server-side)
   appId?: string | null
   companyId?: string | null
   detail?: any

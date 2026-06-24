@@ -21,7 +21,11 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
 
   const inCompany = useMemo(() => {
     if (!selectedCompany) return [] as AdminUser[]
-    return users.filter((u) => u.entitlements.some((e) => e.companies.some((c) => c.companyId === selectedCompany.id)))
+    // App-wide admins (isAppAdmin) have access without a per-company row — include them too, or an
+    // app admin with no company grant is invisible and unmanageable from the grid.
+    return users.filter((u) =>
+      u.entitlements.some((e) => e.isAppAdmin || e.companies.some((c) => c.companyId === selectedCompany.id)),
+    )
   }, [users, selectedCompany])
 
   const searched = useMemo(() => {
