@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
+import { Trash2 } from 'lucide-react'
 import { iam } from '../lib/iam'
 import { useToast } from '../components/Toast'
 import { StyledSelect } from '../components/StyledSelect'
@@ -61,6 +62,8 @@ function GeneralTab() {
   // branding
   const [companyName, setCompanyName] = useState('')
   const [message, setMessage] = useState('')
+  const [logoDataUrl, setLogoDataUrl] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
   // prefs
   const [timezone, setTimezone] = useState('UTC')
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD')
@@ -79,6 +82,8 @@ function GeneralTab() {
         const g = (s.general_prefs || {}) as Record<string, any>
         setCompanyName(b.companyName || '')
         setMessage(b.message || '')
+        setLogoDataUrl(b.logoDataUrl || '')
+        setPhotos(Array.isArray(b.photoDataUrls) ? b.photoDataUrls : [])
         setTimezone(g.timezone || 'UTC')
         setDateFormat(g.dateFormat || 'YYYY-MM-DD')
         setCurrency(g.currency || 'USD ($)')
@@ -100,6 +105,8 @@ function GeneralTab() {
       await iam.saveSetting('login_branding', {
         companyName: companyName.trim(),
         message: message.trim(),
+        logoDataUrl,
+        photoDataUrls: photos,
       })
       toast('Saved', 'ok')
     } catch (e: any) {
@@ -119,6 +126,20 @@ function GeneralTab() {
     } finally {
       setSavingPrefs(false)
     }
+  }
+
+  const readImage = (file: File, cb: (dataUrl: string) => void) => {
+    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) { toast('Use a PNG, JPG, WEBP or GIF image', 'bad'); return }
+    if (file.size > 1_000_000) { toast('Each image must be under ~1 MB', 'bad'); return }
+    const r = new FileReader()
+    r.onload = () => cb(String(r.result))
+    r.onerror = () => toast('Could not read that image', 'bad')
+    r.readAsDataURL(file)
+  }
+  const onLogoFile = (e: ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) readImage(f, setLogoDataUrl) }
+  const onPhotoFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []); e.target.value = ''
+    files.forEach((f) => readImage(f, (d) => setPhotos((p) => (p.length >= 8 ? p : [...p, d]))))
   }
 
   if (loading) return <p className="text-xs text-slate-400">Loading…</p>
@@ -145,9 +166,48 @@ function GeneralTab() {
             />
           </Field>
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">
-          Logos and login photos are managed elsewhere.
-        </p>
+        <div className="mt-3">
+          <span className={LABEL}>Login logo</span>
+          <div className="mt-1.5 flex items-center gap-3">
+            <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-800/40">
+              {logoDataUrl ? <img src={logoDataUrl} alt="Login logo" className="h-full w-full object-contain" /> : <span className="text-[9px] text-slate-600">No logo</span>}
+            </div>
+            <label className={BTN_PLAIN + ' cursor-pointer'}>
+              {logoDataUrl ? 'Replace' : 'Upload'}
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onLogoFile} className="hidden" />
+            </label>
+            {logoDataUrl ? (
+              <button type="button" onClick={() => setLogoDataUrl('')} className="text-[11px] text-rose-400 transition-colors hover:text-rose-300">Remove</button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <span className={LABEL}>Login page photos</span>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {photos.map((src, i) => (
+              <div key={i} className="group relative h-16 w-24 overflow-hidden rounded-lg border border-slate-700">
+                <img src={src} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
+                  className="absolute right-1 top-1 rounded bg-slate-900/80 p-0.5 text-rose-300 opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label="Remove photo"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {photos.length < 8 ? (
+              <label className="grid h-16 w-24 cursor-pointer place-items-center rounded-lg border border-dashed border-slate-700 text-[11px] text-slate-500 transition-colors hover:border-emerald-500 hover:text-emerald-300">
+                + Add
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={onPhotoFiles} className="hidden" />
+              </label>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-[11px] text-slate-400">Shown on the login page hero (rotating if multiple). PNG/JPG/WEBP/GIF, under ~1 MB each, up to 8.</p>
+        </div>
+
         <div className="mt-3">
           <button className={BTN_PRIMARY} onClick={saveBranding} disabled={savingBrand}>
             {savingBrand ? 'Saving…' : 'Save'}

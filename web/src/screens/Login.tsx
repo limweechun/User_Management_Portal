@@ -32,10 +32,18 @@ export function Login({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [notice, setNotice] = useState('')
+  const [pi, setPi] = useState(0)
 
   useEffect(() => {
     iam.getBranding().then(setBranding).catch(() => {})
   }, [])
+
+  const photos = branding.photoDataUrls || []
+  useEffect(() => {
+    if (photos.length <= 1) return
+    const t = window.setInterval(() => setPi((i) => (i + 1) % photos.length), 5000)
+    return () => window.clearInterval(t)
+  }, [photos.length])
 
   const go = (m: Mode) => { setMode(m); setErr(''); setNotice('') }
 
@@ -73,21 +81,36 @@ export function Login({
   return (
     <div className="flex h-screen bg-slate-950">
       {/* Hero / brand panel */}
-      <div className="relative hidden w-1/2 flex-col justify-between bg-emerald-700 p-12 text-white lg:flex">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <ShieldCheck className="h-5 w-5" />
-          {brandName}
-        </div>
-        {branding.logoDataUrl ? (
-          <img src={branding.logoDataUrl} alt="logo" className="max-h-24 w-auto self-start rounded-lg bg-white/10 p-2" />
+      <div className="relative hidden w-1/2 overflow-hidden bg-emerald-700 lg:flex">
+        {photos.length > 0 ? (
+          <>
+            {photos.map((src, i) => (
+              <img
+                key={i}
+                src={src}
+                alt=""
+                className={'absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ' + (i === pi ? 'opacity-100' : 'opacity-0')}
+              />
+            ))}
+            <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/85 via-emerald-900/45 to-emerald-900/35" />
+          </>
         ) : null}
-        <div>
-          <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
-          <p className="mt-3 max-w-sm text-sm text-emerald-50/80">
-            {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
-          </p>
+        <div className="relative z-10 flex w-full flex-col justify-between p-12 text-white">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <ShieldCheck className="h-5 w-5" />
+            {brandName}
+          </div>
+          {branding.logoDataUrl ? (
+            <img src={branding.logoDataUrl} alt="logo" className="max-h-24 w-auto self-start rounded-lg bg-white/10 p-2" />
+          ) : null}
+          <div>
+            <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
+            <p className="mt-3 max-w-sm text-sm text-emerald-50/90">
+              {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
+            </p>
+          </div>
+          <div className="text-[11px] text-emerald-50/70">© 2026 {brandName} · Secure by design</div>
         </div>
-        <div className="text-[11px] text-emerald-50/60">© 2026 {brandName} · Secure by design</div>
       </div>
 
       {/* Form panel */}
