@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, User } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react'
 import { iam, type Branding } from '../lib/iam'
 import { useToast } from '../components/Toast'
 
@@ -95,14 +95,7 @@ export function Login({
             <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/85 via-emerald-900/45 to-emerald-900/35" />
           </>
         ) : null}
-        <div className="relative z-10 flex w-full flex-col justify-between p-12 text-white">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="h-5 w-5" />
-            {brandName}
-          </div>
-          {branding.logoDataUrl ? (
-            <img src={branding.logoDataUrl} alt="logo" className="max-h-24 w-auto self-start rounded-lg bg-white/10 p-2" />
-          ) : null}
+        <div className="relative z-10 flex w-full flex-col justify-end gap-6 p-12 text-white">
           <div>
             <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
             <p className="mt-3 max-w-sm text-sm text-emerald-50/90">
@@ -116,6 +109,10 @@ export function Login({
       {/* Form panel */}
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
         <form onSubmit={submit} className="w-full max-w-sm">
+          {branding.logoDataUrl ? (
+            <img src={branding.logoDataUrl} alt="logo" className="mb-4 max-h-16 w-auto rounded-lg" />
+          ) : null}
+          <div className="mb-5 text-[42px] font-semibold leading-none tracking-tight text-slate-100">{brandName}</div>
           <h1 className="text-lg font-medium text-slate-200">{c.title}</h1>
           <p className="mt-1 text-xs text-slate-400">{c.sub}</p>
 
@@ -223,7 +220,7 @@ const inputCls = 'w-full bg-transparent text-xs text-slate-200 placeholder:text-
 
 function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
+    <div className="flex items-center gap-2.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
       <span className="text-slate-500">{icon}</span>
       {children}
     </div>

@@ -38,3 +38,15 @@ body {
 .scrollbar-transparent::-webkit-scrollbar-track {
   background-color: transparent;
 }
+
+/* Keep browser-autofilled login inputs on-theme (override the light autofill background). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #e2e8f0;
+  caret-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0 1000px #1e293b inset;
+  box-shadow: 0 0 0 1000px #1e293b inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
