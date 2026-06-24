@@ -1,29 +1,47 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Search, Building2 } from 'lucide-react'
+import { Plus, Search, Building2, Pencil } from 'lucide-react'
 import { iam, type Company } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { AddCompanyDrawer } from '../components/AddCompanyDrawer'
+import { EditCompanyDrawer } from '../components/EditCompanyDrawer'
 import { TierCard } from '../components/TierCard'
 
 // Tier 1 — Workspace Scope: the master list of tenants. Selecting one filters Tiers 2-3 (and
-// purges any open Tier-3 state via the workspace context).
+// purges any open Tier-3 state via the workspace context). The pencil opens the company profile.
 export function Tier1Companies() {
   const { me } = useSession()
   const { selectedCompany, selectCompany } = useWorkspace()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
+  const [editing, setEditing] = useState<Company | null>(null)
   const [q, setQ] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
-    try { setCompanies(await iam.listCompanies()) } finally { setLoading(false) }
+    try {
+      const list = await iam.listCompanies()
+      setCompanies(list)
+      return list
+    } finally {
+      setLoading(false)
+    }
   }, [])
   useEffect(() => { void load() }, [load])
 
   const filtered = companies.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
   const domain = me?.user.email?.split('@')[1]
+
+  const afterSave = (updated: Company) => {
+    setEditing(null)
+    void load().then((list) => {
+      if (selectedCompany?.id === updated.id) {
+        const fresh = list.find((c) => c.id === updated.id)
+        if (fresh) selectCompany(fresh)
+      }
+    })
+  }
 
   return (
     <TierCard
@@ -61,20 +79,32 @@ export function Tier1Companies() {
               const sel = selectedCompany?.id === c.id
               const active = (c.status || '').toLowerCase() === 'active'
               return (
-                <button
+                <div
                   key={c.id}
-                  onClick={() => selectCompany(c)}
                   className={
-                    'flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all duration-200 ' +
+                    'group flex items-center gap-1 rounded-lg border transition-all duration-200 ' +
                     (sel ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-transparent hover:bg-slate-800/60')
                   }
                 >
-                  <span className={'h-2 w-2 shrink-0 rounded-full ' + (active ? 'bg-emerald-400' : 'bg-slate-600')} />
-                  <div className="min-w-0 flex-1">
-                    <div className={'truncate text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>{c.name}</div>
-                    {c.companyCode ? <div className="truncate text-[10px] text-slate-500">{c.companyCode}</div> : null}
-                  </div>
-                </button>
+                  <button onClick={() => selectCompany(c)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 text-left">
+                    <span className={'h-2 w-2 shrink-0 rounded-full ' + (active ? 'bg-emerald-400' : 'bg-slate-600')} />
+                    <div className="min-w-0 flex-1">
+                      <div className={'truncate text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>{c.name}</div>
+                      {c.companyCode ? <div className="truncate text-[10px] text-slate-500">{c.companyCode}</div> : null}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setEditing(c)}
+                    title="Edit company profile"
+                    aria-label={'Edit ' + c.name + ' profile'}
+                    className={
+                      'mr-1.5 shrink-0 rounded-md p-1.5 text-slate-500 transition-all duration-200 hover:bg-slate-800 hover:text-emerald-300 ' +
+                      (sel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
+                    }
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -90,6 +120,7 @@ export function Tier1Companies() {
         onClose={() => setAddOpen(false)}
         onCreated={(c) => { setAddOpen(false); void load().then(() => selectCompany(c)) }}
       />
+      <EditCompanyDrawer open={!!editing} company={editing} onClose={() => setEditing(null)} onSaved={afterSave} />
     </TierCard>
   )
 }
