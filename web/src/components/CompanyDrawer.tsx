@@ -101,7 +101,7 @@ export function CompanyDrawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="scrollbar-transparent min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <form onSubmit={submit} className="space-y-3">
             <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
               <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Company logo</div>
