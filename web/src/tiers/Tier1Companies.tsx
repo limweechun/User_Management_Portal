@@ -3,19 +3,19 @@ import { Plus, Search, Building2, Pencil } from 'lucide-react'
 import { iam, type Company } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { AddCompanyDrawer } from '../components/AddCompanyDrawer'
-import { EditCompanyDrawer } from '../components/EditCompanyDrawer'
+import { CompanyDrawer } from '../components/CompanyDrawer'
 import { TierCard } from '../components/TierCard'
 
 // Tier 1 — Workspace Scope: the master list of tenants. Selecting one filters Tiers 2-3 (and
-// purges any open Tier-3 state via the workspace context). The pencil opens the company profile.
+// purges any open Tier-3 state). The "+ Register" button and the row pencil open the SAME
+// CompanyDrawer (create when company=null, edit otherwise).
 export function Tier1Companies() {
   const { me } = useSession()
   const { selectedCompany, selectCompany } = useWorkspace()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
-  const [addOpen, setAddOpen] = useState(false)
-  const [editing, setEditing] = useState<Company | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerCompany, setDrawerCompany] = useState<Company | null>(null) // null = register new
   const [q, setQ] = useState('')
 
   const load = useCallback(async () => {
@@ -33,11 +33,15 @@ export function Tier1Companies() {
   const filtered = companies.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
   const domain = me?.user.email?.split('@')[1]
 
-  const afterSave = (updated: Company) => {
-    setEditing(null)
+  const openAdd = () => { setDrawerCompany(null); setDrawerOpen(true) }
+  const openEdit = (c: Company) => { setDrawerCompany(c); setDrawerOpen(true) }
+
+  const afterSave = (saved: Company, isNew: boolean) => {
+    setDrawerOpen(false)
     void load().then((list) => {
-      if (selectedCompany?.id === updated.id) {
-        const fresh = list.find((c) => c.id === updated.id)
+      if (isNew) { selectCompany(saved); return }
+      if (selectedCompany?.id === saved.id) {
+        const fresh = list.find((c) => c.id === saved.id)
         if (fresh) selectCompany(fresh)
       }
     })
@@ -52,7 +56,7 @@ export function Tier1Companies() {
     >
       <div className="shrink-0 space-y-2.5 px-3 pt-3">
         <button
-          onClick={() => setAddOpen(true)}
+          onClick={openAdd}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-all duration-200 hover:bg-emerald-400"
         >
           <Plus className="h-3.5 w-3.5" /> Register New Company
@@ -94,7 +98,7 @@ export function Tier1Companies() {
                     </div>
                   </button>
                   <button
-                    onClick={() => setEditing(c)}
+                    onClick={() => openEdit(c)}
                     title="Edit company profile"
                     aria-label={'Edit ' + c.name + ' profile'}
                     className={
@@ -115,12 +119,7 @@ export function Tier1Companies() {
           Domain: <span className="text-slate-400">{domain}</span>
         </div>
       ) : null}
-      <AddCompanyDrawer
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onCreated={(c) => { setAddOpen(false); void load().then(() => selectCompany(c)) }}
-      />
-      <EditCompanyDrawer open={!!editing} company={editing} onClose={() => setEditing(null)} onSaved={afterSave} />
+      <CompanyDrawer open={drawerOpen} company={drawerCompany} onClose={() => setDrawerOpen(false)} onSaved={afterSave} />
     </TierCard>
   )
 }
