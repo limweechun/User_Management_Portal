@@ -31,7 +31,7 @@ export function WorkspaceView() {
     <div className="flex h-full flex-col bg-slate-950 text-slate-200">
       <div className="flex shrink-0 items-center justify-between gap-3 px-6 pt-5 pb-3">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-white">True Eco Identity &amp; Access Platform</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-white">Identity &amp; Access Platform</h1>
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">Workspace Management Module · Core Layout</p>
         </div>
         <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
