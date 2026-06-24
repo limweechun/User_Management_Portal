@@ -1,0 +1,208 @@
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, User } from 'lucide-react'
+import { iam, type Branding } from '../lib/iam'
+import { useToast } from '../components/Toast'
+
+type Mode = 'login' | 'register' | 'forgot' | 'reset'
+
+const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
+  login: { title: 'Sign in', sub: 'Welcome back', cta: 'Sign in' },
+  register: { title: 'Create your account', sub: 'Join the workspace', cta: 'Create account' },
+  forgot: { title: 'Reset your password', sub: "We'll email you a secure link", cta: 'Send reset link' },
+  reset: { title: 'Set a new password', sub: 'Choose a strong password', cta: 'Update password' },
+}
+
+export function Login({
+  initialMode = 'login',
+  resetToken,
+  onAuthed,
+}: {
+  initialMode?: Mode
+  resetToken?: string
+  onAuthed: () => void
+}) {
+  const { toast } = useToast()
+  const [mode, setMode] = useState<Mode>(initialMode)
+  const [branding, setBranding] = useState<Branding>({})
+  const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    iam.getBranding().then(setBranding).catch(() => {})
+  }, [])
+
+  const go = (m: Mode) => { setMode(m); setErr(''); setNotice('') }
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr(''); setNotice(''); setBusy(true)
+    try {
+      if (mode === 'login') {
+        await iam.login(email.trim(), password, remember)
+        onAuthed()
+      } else if (mode === 'register') {
+        await iam.register({ email: email.trim(), fullName: fullName.trim(), password })
+        setNotice('Account created. Verify your email, then sign in.')
+        setPassword(''); setMode('login')
+      } else if (mode === 'forgot') {
+        await iam.forgotPassword(email.trim())
+        setNotice('If that email exists, a reset link is on its way.')
+      } else if (mode === 'reset') {
+        if (!resetToken) throw new Error('Missing reset token')
+        await iam.resetPassword(resetToken, password)
+        toast('Password updated — please sign in.', 'ok')
+        history.replaceState(null, '', location.pathname)
+        setPassword(''); setMode('login')
+      }
+    } catch (e: any) {
+      setErr(e?.message || 'Something went wrong')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const c = COPY[mode]
+  const brandName = branding.companyName || 'Workplace'
+
+  return (
+    <div className="flex h-screen bg-slate-50">
+      {/* Hero / brand panel */}
+      <div className="relative hidden w-1/2 flex-col justify-between bg-emerald-700 p-12 text-white lg:flex">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <ShieldCheck className="h-5 w-5" />
+          {brandName}
+        </div>
+        {branding.logoDataUrl ? (
+          <img src={branding.logoDataUrl} alt="logo" className="max-h-24 w-auto self-start rounded-lg bg-white/10 p-2" />
+        ) : null}
+        <div>
+          <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
+          <p className="mt-3 max-w-sm text-sm text-emerald-50/80">
+            {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
+          </p>
+        </div>
+        <div className="text-[11px] text-emerald-50/60">© 2026 {brandName} · Secure by design</div>
+      </div>
+
+      {/* Form panel */}
+      <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
+        <form onSubmit={submit} className="w-full max-w-sm">
+          <h1 className="text-lg font-medium text-slate-800">{c.title}</h1>
+          <p className="mt-1 text-xs text-slate-500">{c.sub}</p>
+
+          {notice ? (
+            <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{notice}</div>
+          ) : null}
+          {err ? (
+            <div className="mt-4 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
+          ) : null}
+
+          <div className="mt-5 space-y-3">
+            {mode === 'register' ? (
+              <Field icon={<User className="h-4 w-4" />}>
+                <input
+                  className={inputCls}
+                  placeholder="Full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </Field>
+            ) : null}
+
+            {mode !== 'reset' ? (
+              <Field icon={<Mail className="h-4 w-4" />}>
+                <input
+                  className={inputCls}
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </Field>
+            ) : null}
+
+            {mode !== 'forgot' ? (
+              <Field icon={<Lock className="h-4 w-4" />}>
+                <input
+                  className={inputCls}
+                  type={showPw ? 'text' : 'password'}
+                  placeholder={mode === 'reset' ? 'New password' : 'Password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((s) => !s)}
+                  className="text-slate-400 transition-colors hover:text-slate-600"
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                >
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </Field>
+            ) : null}
+          </div>
+
+          {mode === 'login' ? (
+            <div className="mt-3 flex items-center justify-between text-xs">
+              <label className="flex cursor-pointer items-center gap-2 text-slate-500">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-emerald-600" />
+                Remember me
+              </label>
+              <button type="button" onClick={() => go('forgot')} className="font-medium text-emerald-700 hover:text-emerald-800">
+                Forgot password?
+              </button>
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {busy ? 'Please wait…' : c.cta}
+            {!busy ? <ArrowRight className="h-4 w-4" /> : null}
+          </button>
+
+          <div className="mt-5 text-center text-xs text-slate-500">
+            {mode === 'login' ? (
+              <>
+                No account?{' '}
+                <button type="button" onClick={() => go('register')} className="font-medium text-emerald-700 hover:text-emerald-800">
+                  Create one
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => go('login')} className="font-medium text-emerald-700 hover:text-emerald-800">
+                ← Back to sign in
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+const inputCls = 'w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none'
+
+function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
+      <span className="text-slate-400">{icon}</span>
+      {children}
+    </div>
+  )
+}

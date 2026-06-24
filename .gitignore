@@ -3,7 +3,8 @@
 
 # Dependencies / build (if ever added)
 node_modules/
-dist/
+# Anchored so the React build at web/dist (which the cutover serves) is committable.
+/dist/
 
 # Env / secrets
 .env

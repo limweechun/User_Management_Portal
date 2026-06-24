@@ -1,0 +1,124 @@
+import { useEffect, useState } from 'react'
+import { iam, canUsePortal } from './lib/iam'
+import { useSession } from './context/SessionContext'
+import { Login } from './screens/Login'
+import { Home } from './screens/Home'
+
+type Phase = 'booting' | 'login' | 'reset' | 'awaiting' | 'app'
+
+// Boot sequence mirrors the legacy app.js init(): handle ?logout / ?reset first, then resolve
+// the session via GET /me. The 'app' phase is a placeholder until P1 (AdminShell) + P2 (Launcher).
+export function App() {
+  const { me, refresh, signOut } = useSession()
+  const [phase, setPhase] = useState<Phase>('booting')
+  const [resetToken, setResetToken] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    void (async () => {
+      const params = new URLSearchParams(location.search)
+      if (params.get('logout') === '1') {
+        try { await iam.logout() } catch { /* best effort cookie clear */ }
+        history.replaceState(null, '', location.pathname)
+        setPhase('login')
+        return
+      }
+      const rt = params.get('reset')
+      if (rt) { setResetToken(rt); setPhase('reset'); return }
+      const m = await refresh()
+      if (!m) { setPhase('login'); return }
+      setPhase(m.status === 'pending' ? 'awaiting' : 'app')
+    })()
+  }, [refresh])
+
+  const toApp = async () => {
+    const m = await refresh()
+    setPhase(!m ? 'login' : m.status === 'pending' ? 'awaiting' : 'app')
+  }
+  const out = () => signOut().then(() => setPhase('login'))
+
+  if (phase === 'booting') {
+    return (
+      <div className="grid h-screen place-items-center">
+        <div className="animate-pulse text-xs text-slate-400">Loading…</div>
+      </div>
+    )
+  }
+  if (phase === 'login' || phase === 'reset') {
+    return <Login initialMode={phase === 'reset' ? 'reset' : 'login'} resetToken={resetToken} onAuthed={toApp} />
+  }
+  if (phase === 'awaiting') {
+    return (
+      <Centered
+        title="Awaiting approval"
+        body={`You're signed in as ${me?.user.fullName ?? ''}, but your account is pending an administrator's approval.`}
+        onSignOut={out}
+      />
+    )
+  }
+  // phase === 'app': the post-login home — the app launcher, with the Workspace admin hub
+  // reachable from it for portal/app admins.
+  return <Home onSignOut={out} />
+}
+
+function Centered({ title, body, onSignOut }: { title: string; body: string; onSignOut: () => void }) {
+  return (
+    <div className="grid h-screen place-items-center p-6">
+      <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+        <h1 className="text-base font-medium text-slate-800">{title}</h1>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">{body}</p>
+        <button
+          onClick={onSignOut}
+          className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-slate-700"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AuthedPlaceholder({ onSignOut }: { onSignOut: () => void }) {
+  const { me } = useSession()
+  const admin = canUsePortal(me)
+  const initials = (me?.user.fullName || '?').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+  return (
+    <div className="grid h-screen place-items-center p-6">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-emerald-50 text-sm font-medium text-emerald-700">{initials}</div>
+          <div>
+            <div className="text-sm font-medium text-slate-800">{me?.user.fullName}</div>
+            <div className="text-xs text-slate-500">{me?.user.email}</div>
+          </div>
+        </div>
+        <dl className="mt-5 grid grid-cols-2 gap-3">
+          <Info label="Global role" value={String(me?.globalRole ?? '')} />
+          <Info label="Platform role" value={String(me?.platformRole ?? '')} />
+          <Info label="User ID" value={me?.user.userCode || '—'} />
+          <Info label="Status" value={me?.user.status || ''} />
+        </dl>
+        <div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-[11px] leading-relaxed text-emerald-700">
+          Signed in — session live via the IAM cookie.{' '}
+          {admin
+            ? 'The 3-tier Workspace admin grid and the app launcher land in the next phases.'
+            : 'The app launcher lands in the next phase.'}
+        </div>
+        <button
+          onClick={onSignOut}
+          className="mt-5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 px-3 py-2">
+      <dt className="text-[10px] uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className="mt-0.5 font-medium text-slate-700">{value}</dd>
+    </div>
+  )
+}
