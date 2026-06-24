@@ -12,14 +12,14 @@ import { Toggle } from '../components/Toggle'
 type TabId = 'general' | 'email' | 'idformat'
 
 // ---- small shared bits -------------------------------------------------------
-const CARD = 'rounded-xl border border-slate-100 bg-white p-4'
+const CARD = 'rounded-xl border border-slate-800 bg-slate-900 p-4'
 const INPUT =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition-all duration-200 placeholder:text-slate-300 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10'
+  'w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20'
 const LABEL = 'text-[10px] font-medium uppercase tracking-wide text-slate-400'
 const BTN_PRIMARY =
-  'rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 disabled:opacity-50'
+  'rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-50'
 const BTN_PLAIN =
-  'rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50 disabled:opacity-50'
+  'rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60 disabled:opacity-50'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -44,7 +44,7 @@ function SwitchRow({
   return (
     <div className="flex items-center justify-between gap-3 py-1">
       <div className="flex flex-col">
-        <span className="text-xs font-medium text-slate-700">{label}</span>
+        <span className="text-xs font-medium text-slate-200">{label}</span>
         {hint ? <span className="text-[11px] text-slate-400">{hint}</span> : null}
       </div>
       <Toggle checked={checked} onChange={onChange} />
@@ -126,7 +126,7 @@ function GeneralTab() {
   return (
     <div className="flex flex-col gap-4">
       <section className={CARD}>
-        <h3 className="mb-3 text-xs font-semibold text-slate-700">Login page branding</h3>
+        <h3 className="mb-3 text-xs font-semibold text-slate-200">Login page branding</h3>
         <div className="grid grid-cols-1 gap-3">
           <Field label="Login page company name">
             <input
@@ -156,7 +156,7 @@ function GeneralTab() {
       </section>
 
       <section className={CARD}>
-        <h3 className="mb-3 text-xs font-semibold text-slate-700">Platform preferences</h3>
+        <h3 className="mb-3 text-xs font-semibold text-slate-200">Platform preferences</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Timezone">
             <input
@@ -167,7 +167,7 @@ function GeneralTab() {
             />
           </Field>
           <Field label="Date format">
-            <StyledSelect value={dateFormat} onChange={setDateFormat}>
+            <StyledSelect tone="dark" value={dateFormat} onChange={setDateFormat}>
               {DATE_FORMATS.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -328,7 +328,7 @@ function EmailTab() {
   return (
     <div className="flex flex-col gap-4">
       <section className={CARD}>
-        <h3 className="mb-3 text-xs font-semibold text-slate-700">SMTP configuration</h3>
+        <h3 className="mb-3 text-xs font-semibold text-slate-200">SMTP configuration</h3>
 
         <SwitchRow
           label="Enable email sending"
@@ -407,7 +407,7 @@ function EmailTab() {
       </section>
 
       <section className={CARD}>
-        <h3 className="mb-3 text-xs font-semibold text-slate-700">Diagnostics</h3>
+        <h3 className="mb-3 text-xs font-semibold text-slate-200">Diagnostics</h3>
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -428,7 +428,7 @@ function EmailTab() {
               <span
                 className={
                   'text-[11px] font-medium ' +
-                  (testResult.ok ? 'text-emerald-600' : 'text-rose-600')
+                  (testResult.ok ? 'text-emerald-400' : 'text-rose-400')
                 }
               >
                 {testResult.ok ? '✓ ' : '✗ '}
@@ -445,7 +445,7 @@ function EmailTab() {
               <span
                 className={
                   'text-[11px] font-medium ' +
-                  (checkResult.ok ? 'text-emerald-600' : 'text-rose-600')
+                  (checkResult.ok ? 'text-emerald-400' : 'text-rose-400')
                 }
               >
                 {checkResult.ok ? '✓ ' : '✗ '}
@@ -571,7 +571,7 @@ function IdFormatTab() {
             />
           </Field>
           <Field label="Separator">
-            <StyledSelect value={fmt.separator} onChange={(v) => patch({ separator: v })}>
+            <StyledSelect tone="dark" value={fmt.separator} onChange={(v) => patch({ separator: v })}>
               {SEP_OPTS.map(([v, l]) => (
                 <option key={l} value={v}>
                   {l}
@@ -581,6 +581,7 @@ function IdFormatTab() {
           </Field>
           <Field label="Number of digits">
             <StyledSelect
+              tone="dark"
               value={String(fmt.seqDigits)}
               onChange={(v) => patch({ seqDigits: Number(v) || 4 })}
             >
@@ -606,9 +607,9 @@ function IdFormatTab() {
           />
         </div>
 
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="mt-4 rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2">
           <span className={LABEL}>Next User ID preview</span>
-          <div className="mt-1 font-mono text-sm font-semibold text-slate-700">
+          <div className="mt-1 font-mono text-sm font-semibold text-slate-200">
             {idfPreview(fmt)}
           </div>
         </div>
@@ -635,7 +636,7 @@ export function Settings() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div className="flex items-center gap-4 border-b border-slate-200">
+      <div className="flex items-center gap-4 border-b border-slate-800">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -644,8 +645,8 @@ export function Settings() {
             className={
               'pb-2 text-xs font-medium transition-all duration-200 ' +
               (tab === t.id
-                ? 'border-b-2 border-emerald-600 text-emerald-700'
-                : 'text-slate-500 hover:text-slate-700')
+                ? 'border-b-2 border-emerald-500 text-emerald-300'
+                : 'text-slate-400 hover:text-slate-200')
             }
           >
             {t.label}

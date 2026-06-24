@@ -125,7 +125,7 @@ export function Tier3AccessPanel({
               <StyledSelect tone="dark" value={String(user.globalRole)} onChange={setAccountRole} disabled={!superGate} className="w-full">
                 {GLOBAL_ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </StyledSelect>
-              {!superGate ? <div className="mt-1.5 text-[10px] text-slate-600">Only a Super Admin can change the account role.</div> : null}
+              {!superGate ? <div className="mt-1.5 text-[10px] text-slate-500">Only a Super Admin can change the account role.</div> : null}
             </div>
 
             {/* Per-app entitlement matrix within the active company */}

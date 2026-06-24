@@ -106,43 +106,43 @@ export function FeedbackCenter() {
   }, [rows, toast])
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-slate-50 text-xs text-slate-600">
+    <div className="flex h-full flex-col overflow-hidden bg-slate-800/40 text-xs text-slate-300">
       {/* Header + controls */}
-      <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-3">
+      <div className="shrink-0 border-b border-slate-800 bg-slate-900 px-5 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-800">
-            <MessageSquare className="h-4 w-4 text-emerald-600" /> Feedback Center
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-200">
+            <MessageSquare className="h-4 w-4 text-emerald-400" /> Feedback Center
           </div>
           <button
             onClick={exportCsv}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60"
           >
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <StyledSelect value={app} onChange={setApp} className="w-48">
+          <StyledSelect value={app} onChange={setApp} className="w-48" tone="dark">
             <option value="all">All apps</option>
             {apps.map((a) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </StyledSelect>
 
-          <StyledSelect value={status} onChange={setStatus} className="w-40">
+          <StyledSelect value={status} onChange={setStatus} className="w-40" tone="dark">
             <option value="all">All statuses</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>{cap(s)}</option>
             ))}
           </StyledSelect>
 
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
             <Search className="h-3.5 w-3.5 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search feedback…"
-              className="w-56 bg-transparent text-xs placeholder:text-slate-400 focus:outline-none"
+              className="w-56 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
             />
           </div>
         </div>
@@ -158,14 +158,14 @@ export function FeedbackCenter() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto p-5">
-        <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="rounded-xl border border-slate-800 bg-slate-900">
           <table className="w-full border-separate border-spacing-0">
             <thead>
               <tr>
                 {['App', 'From', 'Category', 'Feedback', 'Rating', 'Status', 'When'].map((h) => (
                   <th
                     key={h}
-                    className="border-b border-slate-100 px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wide text-slate-400"
+                    className="border-b border-slate-800 px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wide text-slate-400"
                   >
                     {h}
                   </th>
@@ -176,7 +176,7 @@ export function FeedbackCenter() {
               {loading ? (
                 <tr><td colSpan={7} className="px-3 py-8 text-center text-xs text-slate-400">Loading…</td></tr>
               ) : error ? (
-                <tr><td colSpan={7} className="px-3 py-8 text-center text-xs text-rose-500">{error}</td></tr>
+                <tr><td colSpan={7} className="px-3 py-8 text-center text-xs text-rose-400">{error}</td></tr>
               ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-3 py-8 text-center text-xs text-slate-400">
@@ -188,26 +188,26 @@ export function FeedbackCenter() {
                   <tr
                     key={r.id}
                     onClick={() => setDetail(r)}
-                    className="cursor-pointer bg-white transition-all duration-200 hover:bg-slate-50"
+                    className="cursor-pointer bg-slate-900 transition-all duration-200 hover:bg-slate-800/50"
                   >
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">{appName(r.appId)}</span>
+                    <td className="border-b border-slate-800 px-3 py-2">
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">{appName(r.appId)}</span>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      <div className="text-xs font-medium text-slate-700">{r.name || '—'}</div>
+                    <td className="border-b border-slate-800 px-3 py-2">
+                      <div className="text-xs font-medium text-slate-200">{r.name || '—'}</div>
                       {r.email ? <div className="text-[10px] text-slate-400">{r.email}</div> : null}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">{FB_CAT[r.category] || r.category}</td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600">{clip(r.message)}</td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-amber-500" title={r.rating ? String(r.rating) : ''}>{stars(r.rating)}</td>
-                    <td className="border-b border-slate-100 px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      <StyledSelect value={r.status} onChange={(v) => void changeStatus(r.id, v)} className="w-32">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-400">{FB_CAT[r.category] || r.category}</td>
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-300">{clip(r.message)}</td>
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-amber-400" title={r.rating ? String(r.rating) : ''}>{stars(r.rating)}</td>
+                    <td className="border-b border-slate-800 px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <StyledSelect value={r.status} onChange={(v) => void changeStatus(r.id, v)} className="w-32" tone="dark">
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>{cap(s)}</option>
                         ))}
                       </StyledSelect>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-[10px] text-slate-400">{new Date(r.createdAt).toLocaleString()}</td>
+                    <td className="border-b border-slate-800 px-3 py-2 text-[10px] text-slate-400">{new Date(r.createdAt).toLocaleString()}</td>
                   </tr>
                 ))
               )}
@@ -226,23 +226,23 @@ export function FeedbackCenter() {
                 label="From"
                 value={
                   <span>
-                    <span className="font-medium text-slate-700">{detail.name || '—'}</span>
+                    <span className="font-medium text-slate-200">{detail.name || '—'}</span>
                     {detail.email ? <span className="ml-1.5 text-[10px] text-slate-400">{detail.email}</span> : null}
                   </span>
                 }
               />
               <Meta label="Category" value={FB_CAT[detail.category] || detail.category} />
-              <Meta label="Rating" value={<span className="text-amber-500">{detail.rating ? stars(detail.rating) : '—'}</span>} />
+              <Meta label="Rating" value={<span className="text-amber-400">{detail.rating ? stars(detail.rating) : '—'}</span>} />
               <Meta label="Status" value={<span className="capitalize">{detail.status}</span>} />
               {detail.pageUrl ? (
-                <Meta label="Page" value={<code className="break-all rounded bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-500">{detail.pageUrl}</code>} />
+                <Meta label="Page" value={<code className="break-all rounded bg-slate-800/40 px-1.5 py-0.5 text-[10px] text-slate-400">{detail.pageUrl}</code>} />
               ) : null}
               <Meta label="Created" value={new Date(detail.createdAt).toLocaleString()} />
               <Meta label="Updated" value={new Date(detail.updatedAt).toLocaleString()} />
             </dl>
             <div>
               <div className="text-[10px] uppercase tracking-wide text-slate-400">Message</div>
-              <div className="mt-1.5 whitespace-pre-wrap rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs text-slate-700">
+              <div className="mt-1.5 whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-xs text-slate-200">
                 {detail.message}
               </div>
             </div>
@@ -256,10 +256,10 @@ export function FeedbackCenter() {
 // Metric card — matches the project's rounded-lg bg-slate-50 stat tile.
 function StatCard({ label, value, icon }: { label: string; value: number; icon: ReactNode }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+    <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
       <div>
         <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
-        <div className="text-base font-medium text-slate-700">{value}</div>
+        <div className="text-base font-medium text-slate-200">{value}</div>
       </div>
       {icon}
     </div>
@@ -269,9 +269,9 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 // One label/value row inside the detail drawer.
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-3 border-b border-slate-100 py-2 last:border-0">
+    <div className="flex gap-3 border-b border-slate-800 py-2 last:border-0">
       <dt className="w-20 shrink-0 text-[10px] uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="min-w-0 flex-1 text-xs text-slate-600">{value}</dd>
+      <dd className="min-w-0 flex-1 text-xs text-slate-300">{value}</dd>
     </div>
   )
 }

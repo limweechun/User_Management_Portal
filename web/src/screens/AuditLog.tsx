@@ -133,15 +133,15 @@ export function AuditLog() {
   }, [selected])
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-slate-50">
+    <div className="flex flex-1 flex-col overflow-hidden bg-slate-800/40">
       {/* Top bar — filters + export */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-5 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 bg-slate-900 px-5 py-3">
         <div className="mr-auto">
-          <h2 className="text-xs font-medium text-slate-800">Audit Log</h2>
-          <p className="text-[10px] text-slate-400">{total} event{total === 1 ? '' : 's'}</p>
+          <h2 className="text-xs font-medium text-slate-200">Audit Log</h2>
+          <p className="text-[10px] text-slate-500">{total} event{total === 1 ? '' : 's'}</p>
         </div>
 
-        <StyledSelect value={action} onChange={onAction} className="w-44">
+        <StyledSelect tone="dark" value={action} onChange={onAction} className="w-44">
           <option value="all">All actions</option>
           {actions.map((a) => (
             <option key={a} value={a}>
@@ -150,7 +150,7 @@ export function AuditLog() {
           ))}
         </StyledSelect>
 
-        <StyledSelect value={appId} onChange={onApp} className="w-44">
+        <StyledSelect tone="dark" value={appId} onChange={onApp} className="w-44">
           <option value="all">All apps</option>
           {apps.map((a) => (
             <option key={a.id} value={a.id}>
@@ -159,20 +159,20 @@ export function AuditLog() {
           ))}
         </StyledSelect>
 
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
-          <Search className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
+          <Search className="h-3.5 w-3.5 text-slate-500" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search audit…"
-            className="w-44 bg-transparent text-xs placeholder:text-slate-400 focus:outline-none"
+            className="w-44 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
           />
         </div>
 
         <button
           type="button"
           onClick={exportCsv}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60"
         >
           <Download className="h-3.5 w-3.5" />
           <span>Export CSV</span>
@@ -181,14 +181,14 @@ export function AuditLog() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-3">
-        <div className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
           <table className="w-full border-separate border-spacing-0">
             <thead>
-              <tr className="bg-slate-50">
+              <tr className="bg-slate-800/40">
                 {['When', 'Action', 'Actor', 'Target', 'App', 'Detail'].map((h) => (
                   <th
                     key={h}
-                    className="border-b border-slate-100 px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wide text-slate-400"
+                    className="border-b border-slate-800 px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wide text-slate-400"
                   >
                     {h}
                   </th>
@@ -204,7 +204,7 @@ export function AuditLog() {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-xs text-rose-500">
+                  <td colSpan={6} className="px-3 py-6 text-center text-xs text-rose-400">
                     {error}
                   </td>
                 </tr>
@@ -219,26 +219,26 @@ export function AuditLog() {
                   <tr
                     key={r.id ?? i}
                     onClick={() => setSelected(r)}
-                    className="cursor-pointer bg-white transition-all duration-200 hover:bg-slate-50"
+                    className="cursor-pointer bg-slate-900 transition-all duration-200 hover:bg-slate-800/50"
                   >
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-400">
                       {new Date(r.createdAt).toLocaleString()}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                    <td className="border-b border-slate-800 px-3 py-2">
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">
                         {r.action}
                       </span>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-300">
                       {r.actor || '—'}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-300">
                       {r.target || '—'}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-400">
                       {r.appId || '—'}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-400">
                       {clip(r.detail) || '—'}
                     </td>
                   </tr>
@@ -250,7 +250,7 @@ export function AuditLog() {
       </div>
 
       {/* Pager */}
-      <div className="flex items-center justify-between border-t border-slate-200 bg-white px-5 py-2.5">
+      <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900 px-5 py-2.5">
         <span className="text-[10px] text-slate-400">
           {from}–{to} of {total}
         </span>
@@ -259,7 +259,7 @@ export function AuditLog() {
             type="button"
             disabled={atStart}
             onClick={() => setOffset((o) => Math.max(0, o - PAGE))}
-            className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             <span>Prev</span>
@@ -268,7 +268,7 @@ export function AuditLog() {
             type="button"
             disabled={atEnd}
             onClick={() => setOffset((o) => o + PAGE)}
-            className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>Next</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -279,12 +279,12 @@ export function AuditLog() {
       {/* Detail drawer */}
       <Drawer open={!!selected} onClose={() => setSelected(null)} title="Audit entry" width="max-w-md">
         {selected && (
-          <div className="text-xs text-slate-600">
+          <div className="text-xs text-slate-300">
             <DetailRow label="When" value={new Date(selected.createdAt).toLocaleString()} />
             <DetailRow
               label="Action"
               value={
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">
                   {selected.action}
                 </span>
               }
@@ -295,7 +295,7 @@ export function AuditLog() {
             <DetailRow label="Company" value={selected.companyId || '—'} />
             <div className="mt-3">
               <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Detail</span>
-              <pre className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-[10px] text-slate-600">
+              <pre className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-800 bg-slate-800/60 p-2.5 text-[10px] text-slate-300">
                 {detailJson}
               </pre>
             </div>
@@ -308,7 +308,7 @@ export function AuditLog() {
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-3 border-b border-slate-100 py-2">
+    <div className="flex gap-3 border-b border-slate-800 py-2">
       <span className="w-16 shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</span>
       <div className="min-w-0 break-words">{value}</div>
     </div>

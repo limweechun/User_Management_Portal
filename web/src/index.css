@@ -9,7 +9,7 @@ body,
 }
 
 body {
-  @apply font-sans tracking-tight text-slate-800 antialiased text-xs bg-slate-50;
+  @apply font-sans tracking-tight text-slate-200 antialiased text-xs bg-slate-950;
 }
 
 @keyframes slideInR {

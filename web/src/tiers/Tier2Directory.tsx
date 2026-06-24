@@ -101,7 +101,7 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
           </div>
           <div className="flex shrink-0 items-center justify-between border-t border-slate-800 px-4 py-2.5 text-[10px]">
             <span className="text-slate-500">Showing {sorted.length} contextual {sorted.length === 1 ? 'entry' : 'entries'}</span>
-            {sortState ? <span className="font-medium text-emerald-400">Global Sort Active</span> : <span className="text-slate-600">Sort idle</span>}
+            {sortState ? <span className="font-medium text-emerald-400">Global Sort Active</span> : <span className="text-slate-500">Sort idle</span>}
           </div>
         </>
       )}

@@ -54,8 +54,8 @@ const EMPTY: FormState = {
 // every lucide icon — see prompt). A generic Box stands in as the visual placeholder.
 function IconChip({ name }: { name: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-500">
-      <Box className="h-3.5 w-3.5 text-slate-400" />
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/40 px-2 py-1 text-[10px] font-medium text-slate-400">
+      <Box className="h-3.5 w-3.5 text-slate-500" />
       {name || 'box'}
     </span>
   )
@@ -226,35 +226,35 @@ export function AppsRegistry() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+      <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-sm font-medium text-slate-800">Apps Registry</h2>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">{apps.length}</span>
+          <h2 className="text-sm font-medium text-slate-200">Apps Registry</h2>
+          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">{apps.length}</span>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700"
+          className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400"
         >
           <Plus className="h-3.5 w-3.5" /> Add app
         </button>
       </div>
 
       <div className="flex-1 overflow-auto p-5">
-        <div className="overflow-hidden rounded-xl border border-slate-100 bg-white">
-          <table className="w-full text-xs text-slate-700">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+          <table className="w-full text-xs text-slate-200">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60 text-left">
-                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Icon</th>
-                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">App ID</th>
-                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Name</th>
-                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Short name</th>
-                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Live</th>
+              <tr className="border-b border-slate-800 bg-slate-800/40 text-left">
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Icon</th>
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">App ID</th>
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Name</th>
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Short name</th>
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Live</th>
                 {canSuper && (
-                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                  <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                     Maintenance
                   </th>
                 )}
-                <th className="px-4 py-2.5 text-right text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                <th className="px-4 py-2.5 text-right text-[10px] font-medium uppercase tracking-wide text-slate-500">
                   Actions
                 </th>
               </tr>
@@ -262,13 +262,13 @@ export function AppsRegistry() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     Loading…
                   </td>
                 </tr>
               ) : apps.length === 0 ? (
                 <tr>
-                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     No apps.
                   </td>
                 </tr>
@@ -280,7 +280,7 @@ export function AppsRegistry() {
                     <tr
                       key={a.id}
                       className={
-                        'border-b border-slate-50 transition-all duration-200 last:border-0 hover:bg-slate-50/60 ' +
+                        'border-b border-slate-800 transition-all duration-200 last:border-0 hover:bg-slate-800/50 ' +
                         (live ? '' : 'opacity-60')
                       }
                     >
@@ -288,20 +288,20 @@ export function AppsRegistry() {
                         <IconChip name={a.icon} />
                       </td>
                       <td className="px-4 py-2.5">
-                        <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+                        <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-slate-300">
                           {a.id}
                         </code>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="font-medium text-slate-800">{a.name}</span>
+                        <span className="font-medium text-slate-200">{a.name}</span>
                         {a.maintenanceMode && (
-                          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 ring-1 ring-amber-200">
+                          <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-500/30">
                             Maintenance
                           </span>
                         )}
                       </td>
                       <td className="px-4 py-2.5">
-                        {a.shortName ? a.shortName : <span className="text-slate-300">—</span>}
+                        {a.shortName ? a.shortName : <span className="text-slate-500">—</span>}
                       </td>
                       <td className="px-4 py-2.5">
                         <Toggle checked={live} onChange={(v) => void toggleLive(a, v)} disabled={busy} />
@@ -319,7 +319,7 @@ export function AppsRegistry() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => openEdit(a)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60"
                           >
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </button>
@@ -328,7 +328,7 @@ export function AppsRegistry() {
                               onClick={() => void removeApp(a)}
                               disabled={busy}
                               title="Delete app"
-                              className="inline-flex items-center rounded-lg border border-slate-200 px-2 py-1.5 text-slate-400 transition-all duration-200 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                              className="inline-flex items-center rounded-lg border border-slate-800 px-2 py-1.5 text-slate-500 transition-all duration-200 hover:border-rose-500/30 hover:bg-rose-500/15 hover:text-rose-300 disabled:opacity-50"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -352,38 +352,38 @@ export function AppsRegistry() {
         width="max-w-md"
       >
         <form onSubmit={submit} className="space-y-3">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             {editing
               ? "Update this app's display details. The App ID can't be changed."
               : 'Register an app in the platform catalog. The App ID is auto-assigned from the name.'}
           </p>
 
           <label className="block">
-            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">Full name</span>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500">Full name</span>
             <input
               value={form.name}
               onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
               placeholder="e.g. Tex Cycle Biomass Power Plant"
               required
               autoFocus
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+              className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">
-              App ID <span className="lowercase tracking-normal text-slate-300">(auto-assigned, permanent)</span>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              App ID <span className="lowercase tracking-normal text-slate-500">(auto-assigned, permanent)</span>
             </span>
             <input
               value={derivedId}
               readOnly
               placeholder="—"
-              className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-500"
+              className="w-full cursor-not-allowed rounded-lg border border-slate-700 bg-slate-800/40 px-3 py-2 font-mono text-xs text-slate-400"
             />
             {!editing && (
-              <span className="mt-1 block text-[10px] text-slate-400">
+              <span className="mt-1 block text-[10px] text-slate-500">
                 First letter of each word (up to 6) + a 2-digit series number. The app opens at{' '}
-                <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-slate-500">
+                <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-slate-400">
                   {derivedId ? '/' + derivedId : '/…'}
                 </code>
                 .
@@ -392,17 +392,17 @@ export function AppsRegistry() {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">Short name</span>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500">Short name</span>
             <input
               value={form.shortName}
               onChange={(e) => setForm((s) => ({ ...s, shortName: e.target.value }))}
               placeholder="e.g. PSM"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+              className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <span className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-slate-500">
               <span>Icon (lucide name)</span>
               <IconChip name={form.icon.trim()} />
             </span>
@@ -410,24 +410,24 @@ export function AppsRegistry() {
               value={form.icon}
               onChange={(e) => setForm((s) => ({ ...s, icon: e.target.value }))}
               placeholder="e.g. shopping-cart"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+              className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
             />
           </label>
 
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+          <div className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
             <div>
-              <div className="text-xs font-medium text-slate-700">Live</div>
-              <div className="text-[10px] text-slate-400">Show this app in the launcher.</div>
+              <div className="text-xs font-medium text-slate-200">Live</div>
+              <div className="text-[10px] text-slate-500">Show this app in the launcher.</div>
             </div>
             <Toggle checked={form.active} onChange={(v) => setForm((s) => ({ ...s, active: v }))} />
           </div>
 
           {canSuper && (
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+            <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-800/40 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-medium text-slate-700">Maintenance mode</div>
-                  <div className="text-[10px] text-slate-400">Block non-admins from this app.</div>
+                  <div className="text-xs font-medium text-slate-200">Maintenance mode</div>
+                  <div className="text-[10px] text-slate-500">Block non-admins from this app.</div>
                 </div>
                 <Toggle
                   checked={form.maintenanceMode}
@@ -435,7 +435,7 @@ export function AppsRegistry() {
                 />
               </div>
               <label className="block">
-                <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500">
                   Maintenance message
                 </span>
                 <textarea
@@ -443,14 +443,14 @@ export function AppsRegistry() {
                   onChange={(e) => setForm((s) => ({ ...s, maintenanceMessage: e.target.value }))}
                   rows={2}
                   placeholder={`e.g. ${form.name || 'This app'} is down for scheduled maintenance.`}
-                  className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                  className="w-full resize-none rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
                 />
               </label>
             </div>
           )}
 
           {error && (
-            <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600 ring-1 ring-rose-200">
+            <p role="alert" className="rounded-lg bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 ring-1 ring-rose-500/30">
               {error}
             </p>
           )}
@@ -459,14 +459,14 @@ export function AppsRegistry() {
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+              className="rounded-lg border border-slate-800 px-4 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {saving ? 'Saving…' : editing ? 'Save changes' : 'Create app'}

@@ -29,10 +29,10 @@ export function Drawer({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-all duration-200" onClick={onClose} />
-      <div className={`absolute top-0 flex h-full w-full ${width} flex-col bg-white shadow-2xl ${sideCls}`}>
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-3.5">
-          <div className="min-w-0 text-sm font-medium text-slate-800">{title}</div>
-          <button onClick={onClose} className="shrink-0 text-slate-400 transition-colors duration-200 hover:text-slate-600" aria-label="Close">
+      <div className={`absolute top-0 flex h-full w-full ${width} flex-col bg-slate-900 shadow-2xl ${sideCls}`}>
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 py-3.5">
+          <div className="min-w-0 text-sm font-medium text-slate-100">{title}</div>
+          <button onClick={onClose} className="shrink-0 text-slate-400 transition-colors duration-200 hover:text-slate-200" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>

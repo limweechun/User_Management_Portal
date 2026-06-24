@@ -71,7 +71,7 @@ export function Login({
   const brandName = branding.companyName || 'Workplace'
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-950">
       {/* Hero / brand panel */}
       <div className="relative hidden w-1/2 flex-col justify-between bg-emerald-700 p-12 text-white lg:flex">
         <div className="flex items-center gap-2 text-sm font-medium">
@@ -93,14 +93,14 @@ export function Login({
       {/* Form panel */}
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
         <form onSubmit={submit} className="w-full max-w-sm">
-          <h1 className="text-lg font-medium text-slate-800">{c.title}</h1>
-          <p className="mt-1 text-xs text-slate-500">{c.sub}</p>
+          <h1 className="text-lg font-medium text-slate-200">{c.title}</h1>
+          <p className="mt-1 text-xs text-slate-400">{c.sub}</p>
 
           {notice ? (
-            <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{notice}</div>
+            <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-3 py-2 text-xs text-emerald-300">{notice}</div>
           ) : null}
           {err ? (
-            <div className="mt-4 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
+            <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">{err}</div>
           ) : null}
 
           <div className="mt-5 space-y-3">
@@ -146,7 +146,7 @@ export function Login({
                 <button
                   type="button"
                   onClick={() => setShowPw((s) => !s)}
-                  className="text-slate-400 transition-colors hover:text-slate-600"
+                  className="text-slate-500 transition-colors hover:text-slate-300"
                   aria-label={showPw ? 'Hide password' : 'Show password'}
                 >
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -157,11 +157,11 @@ export function Login({
 
           {mode === 'login' ? (
             <div className="mt-3 flex items-center justify-between text-xs">
-              <label className="flex cursor-pointer items-center gap-2 text-slate-500">
-                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-emerald-600" />
+              <label className="flex cursor-pointer items-center gap-2 text-slate-400">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-emerald-500" />
                 Remember me
               </label>
-              <button type="button" onClick={() => go('forgot')} className="font-medium text-emerald-700 hover:text-emerald-800">
+              <button type="button" onClick={() => go('forgot')} className="font-medium text-emerald-400 hover:text-emerald-300">
                 Forgot password?
               </button>
             </div>
@@ -170,22 +170,22 @@ export function Login({
           <button
             type="submit"
             disabled={busy}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 disabled:opacity-60"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60"
           >
             {busy ? 'Please wait…' : c.cta}
             {!busy ? <ArrowRight className="h-4 w-4" /> : null}
           </button>
 
-          <div className="mt-5 text-center text-xs text-slate-500">
+          <div className="mt-5 text-center text-xs text-slate-400">
             {mode === 'login' ? (
               <>
                 No account?{' '}
-                <button type="button" onClick={() => go('register')} className="font-medium text-emerald-700 hover:text-emerald-800">
+                <button type="button" onClick={() => go('register')} className="font-medium text-emerald-400 hover:text-emerald-300">
                   Create one
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => go('login')} className="font-medium text-emerald-700 hover:text-emerald-800">
+              <button type="button" onClick={() => go('login')} className="font-medium text-emerald-400 hover:text-emerald-300">
                 ← Back to sign in
               </button>
             )}
@@ -196,12 +196,12 @@ export function Login({
   )
 }
 
-const inputCls = 'w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none'
+const inputCls = 'w-full bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none'
 
 function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
-      <span className="text-slate-400">{icon}</span>
+    <div className="flex items-center gap-2.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/20">
+      <span className="text-slate-500">{icon}</span>
       {children}
     </div>
   )

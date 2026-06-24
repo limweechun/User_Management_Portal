@@ -6,9 +6,9 @@ import { iam } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 
 const inp =
-  'w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 transition-all duration-200 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10'
+  'w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20'
 const btn =
-  'rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-emerald-700 disabled:opacity-60'
+  'rounded-lg bg-emerald-500 px-4 py-2 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60'
 
 export function PersonalSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { me, refresh } = useSession()
@@ -70,17 +70,17 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
           <Field label="Full name"><input className={inp} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>
           <Field label="Phone"><input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-500">In-app notifications</span>
+            <span className="text-[11px] text-slate-400">In-app notifications</span>
             <Toggle checked={notifyInApp} onChange={setNotifyInApp} />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-500">Email notifications</span>
+            <span className="text-[11px] text-slate-400">Email notifications</span>
             <Toggle checked={notifyEmail} onChange={setNotifyEmail} />
           </div>
           <button disabled={busy} className={btn}>Save profile</button>
         </form>
 
-        <form onSubmit={savePassword} className="space-y-3 border-t border-slate-100 pt-4">
+        <form onSubmit={savePassword} className="space-y-3 border-t border-slate-800 pt-4">
           <SectionLabel>Change password</SectionLabel>
           <Field label="Current password"><input type="password" className={inp} value={cur} onChange={(e) => setCur(e.target.value)} /></Field>
           <Field label="New password"><input type="password" className={inp} value={nw} onChange={(e) => setNw(e.target.value)} minLength={6} /></Field>
@@ -92,7 +92,7 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
-  return <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{children}</div>
+  return <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{children}</div>
 }
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (

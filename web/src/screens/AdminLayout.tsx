@@ -68,7 +68,7 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
         {tab === 'workspace' ? (
           <WorkspaceView />
         ) : (
-          <div className="h-full overflow-auto bg-slate-50 px-6 py-5">
+          <div className="h-full overflow-auto bg-slate-950 px-6 py-5">
             <div className="mx-auto max-w-6xl">
               {tab === 'apps' ? <AppsRegistry /> : null}
               {tab === 'feedback' ? <FeedbackCenter /> : null}

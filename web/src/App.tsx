@@ -38,8 +38,8 @@ export function App() {
 
   if (phase === 'booting') {
     return (
-      <div className="grid h-screen place-items-center">
-        <div className="animate-pulse text-xs text-slate-400">Loading…</div>
+      <div className="grid h-screen place-items-center bg-slate-950">
+        <div className="animate-pulse text-xs text-slate-500">Loading…</div>
       </div>
     )
   }
@@ -62,13 +62,13 @@ export function App() {
 
 function Centered({ title, body, onSignOut }: { title: string; body: string; onSignOut: () => void }) {
   return (
-    <div className="grid h-screen place-items-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-base font-medium text-slate-800">{title}</h1>
-        <p className="mt-2 text-xs leading-relaxed text-slate-500">{body}</p>
+    <div className="grid h-screen place-items-center bg-slate-950 p-6">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center shadow-sm">
+        <h1 className="text-base font-medium text-slate-200">{title}</h1>
+        <p className="mt-2 text-xs leading-relaxed text-slate-400">{body}</p>
         <button
           onClick={onSignOut}
-          className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-slate-700"
+          className="mt-5 rounded-lg bg-slate-800 px-4 py-2 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-700"
         >
           Sign out
         </button>
@@ -82,13 +82,13 @@ function AuthedPlaceholder({ onSignOut }: { onSignOut: () => void }) {
   const admin = canUsePortal(me)
   const initials = (me?.user.fullName || '?').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
   return (
-    <div className="grid h-screen place-items-center p-6">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
+    <div className="grid h-screen place-items-center bg-slate-950 p-6">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-full bg-emerald-50 text-sm font-medium text-emerald-700">{initials}</div>
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-emerald-500/15 text-sm font-medium text-emerald-300">{initials}</div>
           <div>
-            <div className="text-sm font-medium text-slate-800">{me?.user.fullName}</div>
-            <div className="text-xs text-slate-500">{me?.user.email}</div>
+            <div className="text-sm font-medium text-slate-200">{me?.user.fullName}</div>
+            <div className="text-xs text-slate-400">{me?.user.email}</div>
           </div>
         </div>
         <dl className="mt-5 grid grid-cols-2 gap-3">
@@ -97,7 +97,7 @@ function AuthedPlaceholder({ onSignOut }: { onSignOut: () => void }) {
           <Info label="User ID" value={me?.user.userCode || '—'} />
           <Info label="Status" value={me?.user.status || ''} />
         </dl>
-        <div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-[11px] leading-relaxed text-emerald-700">
+        <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/15 p-3 text-[11px] leading-relaxed text-emerald-300">
           Signed in — session live via the IAM cookie.{' '}
           {admin
             ? 'The 3-tier Workspace admin grid and the app launcher land in the next phases.'
@@ -105,7 +105,7 @@ function AuthedPlaceholder({ onSignOut }: { onSignOut: () => void }) {
         </div>
         <button
           onClick={onSignOut}
-          className="mt-5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50"
+          className="mt-5 rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60"
         >
           Sign out
         </button>
@@ -116,9 +116,9 @@ function AuthedPlaceholder({ onSignOut }: { onSignOut: () => void }) {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <dt className="text-[10px] uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 font-medium text-slate-700">{value}</dd>
+    <div className="rounded-lg bg-slate-800/40 px-3 py-2">
+      <dt className="text-[10px] uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className="mt-0.5 font-medium text-slate-200">{value}</dd>
     </div>
   )
 }
