@@ -30,10 +30,10 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
   const tabs = allTabs.filter((t) => t.show)
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-50">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-950">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 px-4">
         <div className="flex items-center gap-4">
-          <button onClick={onExit} className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-500 transition-all duration-200 hover:bg-slate-50" title="Back to Apps Portal">
+          <button onClick={onExit} className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800 hover:text-slate-200" title="Back to Apps Portal">
             <Grid2x2 className="h-3.5 w-3.5" /> Apps Portal
           </button>
           <nav className="flex items-center gap-1">
@@ -43,7 +43,7 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
                 onClick={() => setTab(t.id)}
                 className={
                   'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ' +
-                  (tab === t.id ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700')
+                  (tab === t.id ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200')
                 }
               >
                 {t.icon}
@@ -53,12 +53,12 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1 transition-all duration-200 hover:bg-slate-50" title="Personal settings">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-50 text-[9px] font-medium text-emerald-700">{initials(me?.user.fullName)}</span>
-            <span className="hidden text-[11px] text-slate-500 md:inline">{me?.user.fullName} · {roleLabel(me?.globalRole)}</span>
-            <Settings2 className="h-3.5 w-3.5 text-slate-400" />
+          <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-2 rounded-lg border border-slate-700 px-2.5 py-1 transition-all duration-200 hover:bg-slate-800" title="Personal settings">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-500/15 text-[9px] font-medium text-emerald-300">{initials(me?.user.fullName)}</span>
+            <span className="hidden text-[11px] text-slate-400 md:inline">{me?.user.fullName} · {roleLabel(me?.globalRole)}</span>
+            <Settings2 className="h-3.5 w-3.5 text-slate-500" />
           </button>
-          <button onClick={onSignOut} className="rounded-lg border border-slate-200 p-1.5 text-slate-500 transition-all duration-200 hover:bg-slate-50" title="Sign out" aria-label="Sign out">
+          <button onClick={onSignOut} className="rounded-lg border border-slate-700 p-1.5 text-slate-400 transition-all duration-200 hover:bg-slate-800" title="Sign out" aria-label="Sign out">
             <LogOut className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -68,7 +68,7 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
         {tab === 'workspace' ? (
           <WorkspaceView />
         ) : (
-          <div className="h-full overflow-auto px-6 py-5">
+          <div className="h-full overflow-auto bg-slate-50 px-6 py-5">
             <div className="mx-auto max-w-6xl">
               {tab === 'apps' ? <AppsRegistry /> : null}
               {tab === 'feedback' ? <FeedbackCenter /> : null}
