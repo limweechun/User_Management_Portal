@@ -50,7 +50,7 @@
       { id: "hr", name: "HR & Admin", icon: "users", url: "/hr" },
       { id: "procurement", name: "Procurement", icon: "shopping-cart", url: "/procurement" },
       { id: "psm", name: "Project, Service Job And Goods Supply Management", icon: "package", url: "/psm" },
-      { id: "biogas", name: "Liziz Biogas Plant", icon: "factory", url: "/biogas" },
+      { id: "biogas", name: "Biogas Plant", icon: "factory", url: "/biogas" },
       { id: "rnd", name: "R&D Hub", icon: "flask-conical", url: "/rnd" },
       { id: "crm", name: "CRM", icon: "handshake", url: "/crm" },
       { id: "texcycle", name: "Tex Cycle Biomass Power Plant", icon: "zap", url: "/texcycle" }

@@ -1,7 +1,7 @@
 # IAM Contract — Identity & Access Management
 
 The single source of truth for **identity, account approval, and access grants**
-across HR & Admin, Procurement, PSM, Liziz Biogas, this Admin Portal, and a
+across HR & Admin, Procurement, PSM, Biogas, this Admin Portal, and a
 future CRM. (Approved architecture — see `please-study-and-discuss-lazy-petal.md`.)
 
 - **Model:** full multi-company. A grant is split into **entitlement** (which apps
