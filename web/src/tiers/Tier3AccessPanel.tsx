@@ -103,7 +103,7 @@ export function Tier3AccessPanel({
   }
 
   return (
-    <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: Granular IAM Control" className="w-[480px] shrink-0">
+    <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: Granular IAM Control" className="w-[720px] shrink-0">
       {!user || !company ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center text-xs text-slate-500">
           Select a user in the directory to manage their access.
