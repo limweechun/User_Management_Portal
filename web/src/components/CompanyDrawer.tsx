@@ -1,6 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent, type InputHTMLAttributes } from 'react'
-import { ImagePlus, Trash2 } from 'lucide-react'
-import { Drawer } from './Drawer'
+import { ImagePlus, Trash2, X } from 'lucide-react'
 import { useToast } from './Toast'
 import { StyledSelect } from './StyledSelect'
 import { iam, type Company } from '../lib/iam'
@@ -20,9 +19,9 @@ function fromCompany(c: Company): typeof EMPTY_FORM {
   }
 }
 
-// ONE drawer for both registering a new company and editing an existing one — the form is
-// identical, only create vs PATCH on submit differs. company === null ⇒ create mode.
-// Logo (base64 data-URL, <1 MB) feeds document letterheads across apps.
+// ONE centered modal for both registering a new company and editing an existing one — the form
+// is identical, only create vs PATCH on submit differs. company === null ⇒ create mode.
+// Closes on ESC, backdrop click, or Cancel. Logo (base64 data-URL, <1 MB) feeds letterheads.
 export function CompanyDrawer({
   open,
   company,
@@ -48,6 +47,13 @@ export function CompanyDrawer({
     else { setF({ ...EMPTY_FORM }); setStatus('active'); setCurLogo(null) }
     setLogo(undefined)
   }, [open, company])
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
 
   const set = (k: FieldKey) => (e: ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }))
 
@@ -83,71 +89,84 @@ export function CompanyDrawer({
     }
   }
 
+  if (!open) return null
+
   return (
-    <Drawer open={open} onClose={onClose} title={isEdit ? 'Company profile · ' + company!.name : 'Register new company'} side="right" width="max-w-md">
-      <form onSubmit={submit} className="space-y-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
-          <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Company logo</div>
-          <div className="flex items-center gap-3">
-            <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
-              {curLogo ? <img src={curLogo} alt="Company logo" className="h-full w-full object-contain" /> : <span className="text-[9px] text-slate-600">No logo</span>}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
-                <ImagePlus className="h-3.5 w-3.5" /> {curLogo ? 'Replace' : 'Upload'}
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onFile} className="hidden" />
-              </label>
-              {curLogo ? (
-                <button type="button" onClick={clearLogo} className="inline-flex items-center gap-1.5 text-[11px] text-rose-400 transition-colors duration-200 hover:text-rose-300">
-                  <Trash2 className="h-3 w-3" /> Remove logo
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="mt-2 text-[10px] text-slate-500">PNG/JPG/WEBP/GIF, under ~1 MB. Shown on document letterheads.</div>
-        </div>
-
-        <Input label="Company name" value={f.name} onChange={set('name')} required autoFocus={!isEdit} />
-        <Input label="SSM registration no." value={f.regNo} onChange={set('regNo')} />
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Email" type="email" value={f.email} onChange={set('email')} />
-          <Input label="Phone" value={f.phone} onChange={set('phone')} />
-        </div>
-        <Input label="Address line 1" value={f.address} onChange={set('address')} />
-        <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
-        <div className="grid grid-cols-3 gap-3">
-          <Input label="City" value={f.city} onChange={set('city')} />
-          <Input label="State" value={f.state} onChange={set('state')} />
-          <Input label="Postcode" value={f.postcode} onChange={set('postcode')} />
-        </div>
-        <Input label="Website" value={f.website} onChange={set('website')} />
-
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
-          <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Employer statutory numbers</div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="EPF no." value={f.epfNo} onChange={set('epfNo')} />
-            <Input label="SOCSO no." value={f.socsoNo} onChange={set('socsoNo')} />
-            <Input label="EIS no." value={f.eisNo} onChange={set('eisNo')} />
-            <Input label="Income tax no." value={f.incomeTaxNo} onChange={set('incomeTaxNo')} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Status</span>
-          <StyledSelect tone="dark" value={status} onChange={(v) => setStatus(v as 'active' | 'inactive')} className="w-36">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </StyledSelect>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60">Cancel</button>
-          <button type="submit" disabled={busy} className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60">
-            {busy ? 'Saving…' : isEdit ? 'Save profile' : 'Create company'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md transition-all duration-200" onClick={onClose} />
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl animate-[popIn_.18s_ease]">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 py-3.5">
+          <div className="min-w-0 truncate text-sm font-medium text-slate-100">{isEdit ? 'Company profile · ' + company!.name : 'Register new company'}</div>
+          <button onClick={onClose} className="shrink-0 text-slate-400 transition-colors duration-200 hover:text-slate-200" aria-label="Close">
+            <X className="h-4 w-4" />
           </button>
         </div>
-      </form>
-    </Drawer>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <form onSubmit={submit} className="space-y-3">
+            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+              <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Company logo</div>
+              <div className="flex items-center gap-3">
+                <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+                  {curLogo ? <img src={curLogo} alt="Company logo" className="h-full w-full object-contain" /> : <span className="text-[9px] text-slate-600">No logo</span>}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
+                    <ImagePlus className="h-3.5 w-3.5" /> {curLogo ? 'Replace' : 'Upload'}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onFile} className="hidden" />
+                  </label>
+                  {curLogo ? (
+                    <button type="button" onClick={clearLogo} className="inline-flex items-center gap-1.5 text-[11px] text-rose-400 transition-colors duration-200 hover:text-rose-300">
+                      <Trash2 className="h-3 w-3" /> Remove logo
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div className="mt-2 text-[10px] text-slate-500">PNG/JPG/WEBP/GIF, under ~1 MB. Shown on document letterheads.</div>
+            </div>
+
+            <Input label="Company name" value={f.name} onChange={set('name')} required autoFocus={!isEdit} />
+            <Input label="SSM registration no." value={f.regNo} onChange={set('regNo')} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Email" type="email" value={f.email} onChange={set('email')} />
+              <Input label="Phone" value={f.phone} onChange={set('phone')} />
+            </div>
+            <Input label="Address line 1" value={f.address} onChange={set('address')} />
+            <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
+            <div className="grid grid-cols-3 gap-3">
+              <Input label="City" value={f.city} onChange={set('city')} />
+              <Input label="State" value={f.state} onChange={set('state')} />
+              <Input label="Postcode" value={f.postcode} onChange={set('postcode')} />
+            </div>
+            <Input label="Website" value={f.website} onChange={set('website')} />
+
+            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+              <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Employer statutory numbers</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="EPF no." value={f.epfNo} onChange={set('epfNo')} />
+                <Input label="SOCSO no." value={f.socsoNo} onChange={set('socsoNo')} />
+                <Input label="EIS no." value={f.eisNo} onChange={set('eisNo')} />
+                <Input label="Income tax no." value={f.incomeTaxNo} onChange={set('incomeTaxNo')} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Status</span>
+              <StyledSelect tone="dark" value={status} onChange={(v) => setStatus(v as 'active' | 'inactive')} className="w-36">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </StyledSelect>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onClose} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60">Cancel</button>
+              <button type="submit" disabled={busy} className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60">
+                {busy ? 'Saving…' : isEdit ? 'Save profile' : 'Create company'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }
 
