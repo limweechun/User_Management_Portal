@@ -95,14 +95,17 @@ export function Login({
             <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/85 via-emerald-900/45 to-emerald-900/35" />
           </>
         ) : null}
-        <div className="relative z-10 flex w-full flex-col justify-end gap-6 p-12 text-white">
-          <div>
-            <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
-            <p className="mt-3 max-w-sm text-sm text-emerald-50/90">
-              {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
-            </p>
+        <div className="relative z-10 flex w-full flex-col justify-between p-12 text-white">
+          <div className="text-3xl font-semibold tracking-tight [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]">{brandName}</div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-medium tracking-tight">One secure sign-on for your whole workspace.</h2>
+              <p className="mt-3 max-w-sm text-sm text-emerald-50/90">
+                {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
+              </p>
+            </div>
+            <div className="text-[11px] text-emerald-50/70">© 2026 True Eco Digital Platform</div>
           </div>
-          <div className="text-[11px] text-emerald-50/70">© 2026 {brandName} · Secure by design</div>
         </div>
       </div>
 
@@ -110,9 +113,8 @@ export function Login({
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
         <form onSubmit={submit} className="w-full max-w-sm">
           {branding.logoDataUrl ? (
-            <img src={branding.logoDataUrl} alt="logo" className="mb-4 max-h-16 w-auto rounded-lg" />
+            <img src={branding.logoDataUrl} alt="logo" className="mx-auto mb-5 max-h-20 w-auto rounded-lg" />
           ) : null}
-          <div className="mb-5 text-[42px] font-semibold leading-none tracking-tight text-slate-100">{brandName}</div>
           <h1 className="text-lg font-medium text-slate-200">{c.title}</h1>
           <p className="mt-1 text-xs text-slate-400">{c.sub}</p>
 
