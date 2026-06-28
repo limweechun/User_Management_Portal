@@ -344,8 +344,8 @@ export function AppsRegistry() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         title={editing ? `Edit app — ${editing.name}` : 'New app'}
-        side="right"
         width="max-w-md"
+        center
       >
         <form onSubmit={submit} className="space-y-3">
           <p className="text-xs text-slate-500">
