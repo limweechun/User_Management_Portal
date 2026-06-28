@@ -81,6 +81,8 @@ export interface AdminUser {
   phone?: string | null
   status: UserStatus
   emailVerified: boolean
+  createdAt?: string
+  deactivatedAt?: string | null
   globalRole: GlobalRole | string
   platformRole: PlatformRole
   entitlements: AdminUserEntitlement[]

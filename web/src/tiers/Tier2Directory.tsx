@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, Users } from 'lucide-react'
 import type { AdminUser } from '../lib/iam'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useSortable } from '../hooks/useSortable'
 import { SortableHeader } from '../components/SortableHeader'
 import { TierCard } from '../components/TierCard'
-import { roleLabel } from '../lib/util'
+import { fmtDate, roleLabel } from '../lib/util'
 
 // Stable accessor map for the universal sort hook (key → value extractor).
 const ACCESSORS: Record<string, (u: AdminUser) => unknown> = {
@@ -13,12 +13,15 @@ const ACCESSORS: Record<string, (u: AdminUser) => unknown> = {
   id: (u) => u.userCode || '',
   role: (u) => roleLabel(u.globalRole),
   status: (u) => u.status,
+  created: (u) => u.createdAt || '', // ISO strings sort chronologically as text
 }
 
 // Tier 2 — Compact Directory Grid: users mapped to the active company, sortable.
 export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading: boolean }) {
   const { selectedCompany, selectedUser, selectUser } = useWorkspace()
   const [q, setQ] = useState('')
+  // Focus the directory on active users by default; switchable to inactive / all.
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
 
   const inCompany = useMemo(() => {
     if (!selectedCompany) return [] as AdminUser[]
@@ -29,18 +32,25 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
     )
   }, [users, selectedCompany])
 
-  const searched = useMemo(() => {
+  const visible = useMemo(() => {
+    const byStatus = statusFilter === 'all' ? inCompany : inCompany.filter((u) => u.status === statusFilter)
     const s = q.trim().toLowerCase()
-    if (!s) return inCompany
-    return inCompany.filter(
+    if (!s) return byStatus
+    return byStatus.filter(
       (u) =>
         u.fullName.toLowerCase().includes(s) ||
         u.email.toLowerCase().includes(s) ||
         (u.userCode || '').toLowerCase().includes(s),
     )
-  }, [inCompany, q])
+  }, [inCompany, q, statusFilter])
 
-  const { sorted, sortState, toggle } = useSortable(searched, ACCESSORS)
+  const { sorted, sortState, toggle } = useSortable(visible, ACCESSORS)
+
+  // If the selected user becomes inactive (e.g. just deactivated) while we're focused on active
+  // users, widen to "all" so they stay visible and selectable for reactivation.
+  useEffect(() => {
+    if (selectedUser && statusFilter === 'active' && selectedUser.status !== 'active') setStatusFilter('all')
+  }, [selectedUser, statusFilter])
 
   return (
     <TierCard icon={<Users className="h-3.5 w-3.5" />} label="Tier 2: Compact Directory Grid" className="min-w-0 flex-1">
@@ -60,6 +70,20 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
                 className="w-full bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
               />
             </div>
+            <div className="mt-2 inline-flex items-center gap-0.5 rounded-lg border border-slate-800 bg-slate-900/60 p-0.5">
+              {(['active', 'inactive', 'all'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={
+                    'rounded-md px-2.5 py-1 text-[11px] font-medium capitalize transition-all duration-200 ' +
+                    (statusFilter === s ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400 hover:text-slate-200')
+                  }
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mt-2 min-h-0 flex-1 overflow-auto px-2">
             <table className="w-full border-separate border-spacing-0">
@@ -69,13 +93,14 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
                   <SortableHeader label="Name" sortKey="user" sortState={sortState} onSort={toggle} />
                   <SortableHeader label="Global Role" sortKey="role" sortState={sortState} onSort={toggle} />
                   <SortableHeader label="Status" sortKey="status" sortState={sortState} onSort={toggle} />
+                  <SortableHeader label="Created" sortKey="created" sortState={sortState} onSort={toggle} />
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={4} className="px-3 py-6 text-center text-xs text-slate-500">Loading…</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-center text-xs text-slate-500">Loading…</td></tr>
                 ) : sorted.length === 0 ? (
-                  <tr><td colSpan={4} className="px-3 py-6 text-center text-xs text-slate-500">No users in this tenant yet.</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-center text-xs text-slate-500">No users in this tenant yet.</td></tr>
                 ) : (
                   sorted.map((u) => {
                     const sel = selectedUser?.id === u.id
@@ -92,6 +117,7 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
                         </td>
                         <td className="border-b border-slate-800 px-3 py-2.5 text-xs text-slate-300">{roleLabel(u.globalRole)}</td>
                         <td className="border-b border-slate-800 px-3 py-2.5"><StatusText status={u.status} /></td>
+                        <td className="border-b border-slate-800 px-3 py-2.5 text-[11px] text-slate-400">{fmtDate(u.createdAt)}</td>
                       </tr>
                     )
                   })
