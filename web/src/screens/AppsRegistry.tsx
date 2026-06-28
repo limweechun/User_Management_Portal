@@ -61,6 +61,15 @@ export function AppsRegistry() {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
 
+  // The registry list is always presented alphanumerically by app name (natural numeric order).
+  const sortedApps = useMemo(
+    () =>
+      [...apps].sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' }),
+      ),
+    [apps],
+  )
+
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<App | null>(null)
   const [form, setForm] = useState<FormState>({ ...EMPTY })
@@ -264,7 +273,7 @@ export function AppsRegistry() {
                   </td>
                 </tr>
               ) : (
-                apps.map((a) => {
+                sortedApps.map((a) => {
                   const live = a.active !== false
                   const busy = busyId === a.id
                   return (
