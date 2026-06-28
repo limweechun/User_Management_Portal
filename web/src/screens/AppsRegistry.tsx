@@ -6,6 +6,7 @@ import { useToast } from '../components/Toast'
 import { Toggle } from '../components/Toggle'
 import { Drawer } from '../components/Drawer'
 import { IconSelect } from '../components/IconSelect'
+import { AppIcon } from '../lib/appIcons'
 
 // Apps Registry — the platform app catalog (ported 1:1 from the legacy app.js renderApps +
 // openAppDrawer + deriveAppId). Each app can be taken live/off, put into maintenance
@@ -234,6 +235,7 @@ export function AppsRegistry() {
           <table className="w-full text-xs text-slate-200">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-800/40 text-left">
+                <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Icon</th>
                 <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">App ID</th>
                 <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Name</th>
                 <th className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">Short name</th>
@@ -251,13 +253,13 @@ export function AppsRegistry() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={canSuper ? 6 : 5} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     Loading…
                   </td>
                 </tr>
               ) : apps.length === 0 ? (
                 <tr>
-                  <td colSpan={canSuper ? 6 : 5} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={canSuper ? 7 : 6} className="px-4 py-6 text-center text-slate-500">
                     No apps.
                   </td>
                 </tr>
@@ -273,6 +275,11 @@ export function AppsRegistry() {
                         (live ? '' : 'opacity-60')
                       }
                     >
+                      <td className="px-4 py-2.5">
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-800 text-slate-300">
+                          <AppIcon name={a.icon} className="h-4 w-4" />
+                        </span>
+                      </td>
                       <td className="px-4 py-2.5">
                         <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-slate-300">
                           {a.id}
