@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Plus, Pencil, Trash2, Box, Save } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save } from 'lucide-react'
 import { iam, isSuperAdmin, type App } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useToast } from '../components/Toast'
 import { Toggle } from '../components/Toggle'
 import { Drawer } from '../components/Drawer'
+import { IconSelect } from '../components/IconSelect'
 
 // Apps Registry — the platform app catalog (ported 1:1 from the legacy app.js renderApps +
 // openAppDrawer + deriveAppId). Each app can be taken live/off, put into maintenance
@@ -48,17 +49,6 @@ const EMPTY: FormState = {
   active: true,
   maintenanceMode: false,
   maintenanceMessage: '',
-}
-
-// Small slate chip showing the lucide icon NAME (we intentionally do not dynamically import
-// every lucide icon — see prompt). A generic Box stands in as the visual placeholder.
-function IconChip({ name }: { name: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/40 px-2 py-1 text-[10px] font-medium text-slate-400">
-      <Box className="h-3.5 w-3.5 text-slate-500" />
-      {name || 'box'}
-    </span>
-  )
 }
 
 export function AppsRegistry() {
@@ -397,18 +387,11 @@ export function AppsRegistry() {
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-slate-500">
-              <span>Icon (lucide name)</span>
-              <IconChip name={form.icon.trim()} />
-            </span>
-            <input
-              value={form.icon}
-              onChange={(e) => setForm((s) => ({ ...s, icon: e.target.value }))}
-              placeholder="e.g. shopping-cart"
-              className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
-            />
-          </label>
+          <div>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500">Icon</span>
+            <IconSelect value={form.icon} onChange={(name) => setForm((s) => ({ ...s, icon: name }))} />
+            <span className="mt-1 block text-[10px] text-slate-500">Shown on the app's launcher tile.</span>
+          </div>
 
           <div className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2">
             <div>

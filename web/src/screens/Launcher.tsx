@@ -3,6 +3,7 @@ import { Shield, ArrowRight, Wrench, Settings2, LogOut } from 'lucide-react'
 import { iam, canUsePortal, isSuperAdmin, type App, type Branding } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { initials } from '../lib/util'
+import { iconByName } from '../lib/appIcons'
 import { PersonalSettings } from '../components/PersonalSettings'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
@@ -102,7 +103,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                 if (blocked) {
                   return (
                     <div key={a.id} title={a.maintenanceMessage || 'Temporarily under maintenance.'} className="cursor-not-allowed rounded-xl border border-slate-800 bg-slate-900/60 p-4 opacity-60">
-                      <Tile name={a.name} foot={<span className="flex items-center gap-1 text-rose-400"><Wrench className="h-3 w-3" /> Under maintenance</span>} />
+                      <Tile name={a.name} icon={a.icon} foot={<span className="flex items-center gap-1 text-rose-400"><Wrench className="h-3 w-3" /> Under maintenance</span>} />
                     </div>
                   )
                 }
@@ -110,6 +111,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                   <a key={a.id} href={hrefFor(a)} className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all duration-200 hover:border-slate-700 hover:shadow-sm">
                     <Tile
                       name={a.name}
+                      icon={a.icon}
                       foot={
                         a.maintenanceMode ? (
                           <span className="flex items-center gap-1 text-amber-400"><Wrench className="h-3 w-3" /> Maintenance — enter</span>
@@ -138,10 +140,13 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   )
 }
 
-function Tile({ name, foot }: { name: string; foot: ReactNode }) {
+function Tile({ name, icon, foot }: { name: string; icon?: string; foot: ReactNode }) {
+  const Icon = iconByName(icon)
   return (
     <>
-      <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-slate-800 text-[11px] font-medium text-slate-400">{initials(name)}</div>
+      <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-slate-800 text-slate-300">
+        <Icon className="h-4 w-4" />
+      </div>
       <div className="truncate text-[17px] font-medium text-slate-200">{name}</div>
       <div className="mt-1 text-[11px]">{foot}</div>
     </>
