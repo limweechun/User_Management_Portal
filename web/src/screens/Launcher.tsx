@@ -126,7 +126,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
               {canUsePortal(me) ? (
                 <button onClick={onOpenAdmin} className="group rounded-xl border-2 border-emerald-500/30 bg-emerald-500/15 p-4 text-left transition-all duration-200 hover:border-emerald-500/50">
                   <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-emerald-500 text-slate-950"><Shield className="h-4 w-4" /></div>
-                  <div className="text-[17px] font-medium text-slate-100">User Management</div>
+                  <div className="text-[17px] font-medium leading-normal text-slate-100">User Management</div>
                   <div className="mt-3 flex items-center gap-1 text-[11px] text-emerald-300">Manage <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" /></div>
                 </button>
               ) : null}
@@ -147,7 +147,7 @@ function Tile({ name, icon, foot }: { name: string; icon?: string; foot: ReactNo
       <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-slate-800 text-slate-300">
         <Icon className="h-4 w-4" />
       </div>
-      <div className="truncate text-[17px] font-medium text-slate-200">{name}</div>
+      <div className="truncate text-[17px] font-medium leading-normal text-slate-200">{name}</div>
       <div className="mt-3 text-[11px]">{foot}</div>
     </>
   )
