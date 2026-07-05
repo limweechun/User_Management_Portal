@@ -41,7 +41,7 @@ export function WorkspaceView() {
       {/* User-first flow: Tier 1 = user directory, Tier 2 = company scope, Tier 3 = app access. */}
       <div className="flex min-h-0 flex-1 gap-4 px-6 pb-6">
         <Tier2Directory users={users} loading={loading} reload={reload} />
-        <Tier1Companies />
+        <Tier1Companies reload={reload} />
         <Tier3AccessPanel user={selectedUser} company={selectedCompany} reload={reload} />
       </div>
     </div>

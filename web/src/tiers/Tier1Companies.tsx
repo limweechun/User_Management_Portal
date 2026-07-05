@@ -1,23 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Plus, Search, Building2, Pencil } from 'lucide-react'
-import { iam, type Company } from '../lib/iam'
+import { iam, type AdminUser, type Company } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
+import { useToast } from '../components/Toast'
 import { CompanyDrawer } from '../components/CompanyDrawer'
 import { TierCard } from '../components/TierCard'
 
 // Tier 2 — Company Scope: the master list of tenants. Selecting one sets which company
-// the Tier-3 app grants apply to (the selected user carries over from Tier 1). A green
-// "access" chip marks companies the selected user already has grants in. The "+ Register"
-// button and the row pencil open the SAME CompanyDrawer (create when company=null, edit otherwise).
-export function Tier1Companies() {
+// the Tier-3 app grants apply to (the selected user carries over from Tier 1). Each row
+// has a MEMBERSHIP TICK BOX for the selected user: ticked = the user holds per-company
+// grants there, so the company appears in their in-app company switcher; unticking
+// removes every grant they hold in that company (it vanishes from their switchers).
+// The "+ Register" button and the row pencil open the SAME CompanyDrawer (create when
+// company=null, edit otherwise).
+export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> }) {
   const { me } = useSession()
-  const { selectedCompany, selectCompany, selectedUser } = useWorkspace()
+  const { toast } = useToast()
+  const { selectedCompany, selectCompany, selectedUser, selectUser } = useWorkspace()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerCompany, setDrawerCompany] = useState<Company | null>(null) // null = register new
   const [q, setQ] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -48,6 +54,51 @@ export function Tier1Companies() {
     })
   }
 
+  // Membership tick box: put the company in / take it out of the selected user's
+  // in-app company switcher. Apps list companies from the user's per-company grants,
+  // so tick = replicate the user's app set into this company (keeping each app's
+  // existing role title, else Ordinary User) and untick = remove every grant they
+  // hold here (dropping an app's entitlement when this was its last company, unless
+  // they're an app-wide admin) — exactly the Tier-3 "No Access" semantics.
+  const toggleMembership = async (c: Company, next: boolean) => {
+    if (!selectedUser || busyId) return
+    const ents = selectedUser.entitlements
+    if (next && ents.length === 0) {
+      toast('No apps to place in the switcher yet — select this company, then grant app access in Tier 3', 'bad')
+      return
+    }
+    if (!next) {
+      const inHere = ents.filter((e) => e.companies.some((cc) => cc.companyId === c.id))
+      if (inHere.length === 0) return
+      if (!window.confirm(`Remove ${selectedUser.fullName} from ${c.name}?\n\nAll their app access in this company will be revoked and it will disappear from their company switcher.`)) return
+    }
+    setBusyId(c.id)
+    try {
+      if (next) {
+        for (const e of ents) {
+          if (e.companies.some((cc) => cc.companyId === c.id)) continue
+          const role = e.companies[0]?.role || 'ORDINARY_USER'
+          await iam.setCompanyAccess(selectedUser.id, e.appId, c.id, role)
+        }
+        toast(`${c.name} added to ${selectedUser.fullName}'s company switcher`, 'ok')
+      } else {
+        for (const e of ents) {
+          if (!e.companies.some((cc) => cc.companyId === c.id)) continue
+          await iam.removeCompanyAccess(selectedUser.id, e.appId, c.id)
+          if (e.companies.length <= 1 && !e.isAppAdmin) await iam.setEntitlement(selectedUser.id, e.appId, { entitled: false })
+        }
+        toast(`${selectedUser.fullName} removed from ${c.name}`, 'ok')
+      }
+      const list = await reload()
+      const fresh = list.find((u) => u.id === selectedUser.id)
+      if (fresh) selectUser(fresh)
+    } catch (e: any) {
+      toast(e?.message || 'Failed to update company membership', 'bad')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <TierCard
       icon={<Building2 className="h-3.5 w-3.5" />}
@@ -72,6 +123,11 @@ export function Tier1Companies() {
           />
         </div>
         <div className="px-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Active Tenant Register</div>
+        {selectedUser ? (
+          <div className="px-0.5 text-[10px] leading-snug text-slate-500">
+            Tick = <span className="text-slate-400">{selectedUser.fullName}</span> can pick that company in the app company switcher.
+          </div>
+        ) : null}
       </div>
       <div className="mt-1.5 min-h-0 flex-1 overflow-y-auto px-3 pb-2">
         {loading ? (
@@ -94,20 +150,25 @@ export function Tier1Companies() {
                     (sel ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-transparent hover:bg-slate-800/60')
                   }
                 >
+                  {selectedUser ? (
+                    <input
+                      type="checkbox"
+                      checked={userHasAccess}
+                      disabled={busyId != null}
+                      onChange={(e) => void toggleMembership(c, e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      title={
+                        userHasAccess
+                          ? c.name + ' is in ' + selectedUser.fullName + "'s company switcher — untick to remove their access here"
+                          : 'Tick to let ' + selectedUser.fullName + ' select ' + c.name + ' in the app company switcher'
+                      }
+                      className="ml-2.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-emerald-500 disabled:cursor-wait"
+                    />
+                  ) : null}
                   <button onClick={() => selectCompany(c)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 text-left">
                     <span className={'h-2 w-2 shrink-0 rounded-full ' + (active ? 'bg-emerald-400' : 'bg-slate-600')} />
                     <div className="min-w-0 flex-1">
-                      <div className={'flex items-center gap-1.5 text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>
-                        <span className="truncate">{c.name}</span>
-                        {userHasAccess ? (
-                          <span
-                            className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-400 ring-1 ring-emerald-500/30"
-                            title={(selectedUser?.fullName || 'Selected user') + ' has access in this company'}
-                          >
-                            access
-                          </span>
-                        ) : null}
-                      </div>
+                      <div className={'truncate text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>{c.name}</div>
                       {c.companyCode ? <div className="truncate text-[10px] text-slate-500">{c.companyCode}</div> : null}
                     </div>
                   </button>
