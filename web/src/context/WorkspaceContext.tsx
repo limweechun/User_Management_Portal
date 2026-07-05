@@ -20,8 +20,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const purgeTierState = useCallback(() => setSelectedUser(null), [])
 
+  // User-first flow: Tier 1 is the user directory, Tier 2 the company scope —
+  // switching company keeps the selected user (Tier 3 = that user @ that company).
   const selectCompany = useCallback((c: Company | null) => {
-    setSelectedUser(null) // purge Tier 3 on every company switch
     setCompany(c)
   }, [])
 

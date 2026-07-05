@@ -6,12 +6,13 @@ import { useWorkspace } from '../context/WorkspaceContext'
 import { CompanyDrawer } from '../components/CompanyDrawer'
 import { TierCard } from '../components/TierCard'
 
-// Tier 1 — Workspace Scope: the master list of tenants. Selecting one filters Tiers 2-3 (and
-// purges any open Tier-3 state). The "+ Register" button and the row pencil open the SAME
-// CompanyDrawer (create when company=null, edit otherwise).
+// Tier 2 — Company Scope: the master list of tenants. Selecting one sets which company
+// the Tier-3 app grants apply to (the selected user carries over from Tier 1). A green
+// "access" chip marks companies the selected user already has grants in. The "+ Register"
+// button and the row pencil open the SAME CompanyDrawer (create when company=null, edit otherwise).
 export function Tier1Companies() {
   const { me } = useSession()
-  const { selectedCompany, selectCompany } = useWorkspace()
+  const { selectedCompany, selectCompany, selectedUser } = useWorkspace()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -50,7 +51,7 @@ export function Tier1Companies() {
   return (
     <TierCard
       icon={<Building2 className="h-3.5 w-3.5" />}
-      label="Tier 1: Workspace Scope"
+      label="Tier 2: Company Scope"
       trailing={<span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-400">{companies.length}</span>}
       className="w-[244px] shrink-0"
     >
@@ -82,6 +83,9 @@ export function Tier1Companies() {
             {filtered.map((c) => {
               const sel = selectedCompany?.id === c.id
               const active = (c.status || '').toLowerCase() === 'active'
+              // The selected user's footprint: explicit per-company grants only (app-wide
+              // admins have no company rows — their access shows in Tier 3 regardless).
+              const userHasAccess = !!selectedUser?.entitlements.some((e) => e.companies.some((cc) => cc.companyId === c.id))
               return (
                 <div
                   key={c.id}
@@ -93,7 +97,17 @@ export function Tier1Companies() {
                   <button onClick={() => selectCompany(c)} className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 text-left">
                     <span className={'h-2 w-2 shrink-0 rounded-full ' + (active ? 'bg-emerald-400' : 'bg-slate-600')} />
                     <div className="min-w-0 flex-1">
-                      <div className={'truncate text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>{c.name}</div>
+                      <div className={'flex items-center gap-1.5 text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>
+                        <span className="truncate">{c.name}</span>
+                        {userHasAccess ? (
+                          <span
+                            className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-400 ring-1 ring-emerald-500/30"
+                            title={(selectedUser?.fullName || 'Selected user') + ' has access in this company'}
+                          >
+                            access
+                          </span>
+                        ) : null}
+                      </div>
                       {c.companyCode ? <div className="truncate text-[10px] text-slate-500">{c.companyCode}</div> : null}
                     </div>
                   </button>

@@ -20,11 +20,12 @@ export const fmtDate = (iso?: string | null) => {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-// The 5-role global ladder (low → high), used by the account-role selector.
+// The global role ladder (low → high), used by the account-role selector.
+// Director retired as an assignable global (2026-07-05, owner decision) — existing
+// holders keep working (roleLabel still resolves it); the picker no longer offers it.
 export const GLOBAL_ROLE_OPTIONS: { value: GlobalRole; label: string }[] = [
   { value: 'NEW_USER', label: 'New User' },
   { value: 'ORDINARY_USER', label: 'Ordinary User' },
-  { value: 'DIRECTOR', label: 'Director' },
   { value: 'ADMIN', label: 'Portal Admin' },
   { value: 'SUPERADMIN', label: 'Super Admin' },
 ]

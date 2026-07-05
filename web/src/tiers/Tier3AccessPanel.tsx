@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Shield, Check, X as XIcon } from 'lucide-react'
-import { iam, isPortalAdmin, isSuperAdmin, type AdminUser, type App, type Company, type GlobalRole } from '../lib/iam'
+import { iam, isPortalAdmin, isSuperAdmin, type AdminUser, type App, type Company } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useToast } from '../components/Toast'
@@ -8,13 +8,15 @@ import { StyledSelect } from '../components/StyledSelect'
 import { Toggle } from '../components/Toggle'
 import { TierCard } from '../components/TierCard'
 import { requireSuperAdmin } from '../lib/securityGate'
-import { fmtDate, GLOBAL_ROLE_OPTIONS, initials } from '../lib/util'
+import { fmtDate, initials } from '../lib/util'
 
 type Access = 'none' | 'user' | 'appadmin'
 
-// Tier 3 — Granular IAM Control (permanent right column). Manages the selected user's account
-// role + per-app access (within the active company) + deletion-approval rights. Super-Admin-only
-// actions are gated client-side (and re-enforced server-side). Every control writes immediately.
+// Tier 3 — App Access (right column). For the user picked in Tier 1, within the company
+// picked in Tier 2: one dropdown per app — No Access / Ordinary User / App Admin — plus
+// account status and deletion-approval rights. Global role lives in Tier 1; finer role
+// titles are assigned INSIDE each app by its admins. Super-Admin-only actions are gated
+// client-side (and re-enforced server-side). Every control writes immediately.
 export function Tier3AccessPanel({
   user,
   company,
@@ -40,19 +42,6 @@ export function Tier3AccessPanel({
     iam.listApps().then((a) => setApps(a.filter((x) => x.active !== false))).catch(() => {})
   }, [])
 
-  // "Assign into company": a login with no access yet lives in the New-Company holding
-  // pen, so the grid can only select it there — this picker chooses which company the
-  // grants below actually target (defaults to the active tenant; sticky while the same
-  // user stays selected, so a multi-app assignment lands in one company).
-  const [companies, setCompanies] = useState<Company[]>([])
-  useEffect(() => {
-    iam.listCompanies().then(setCompanies).catch(() => {})
-  }, [])
-  const [targetId, setTargetId] = useState<string | null>(null)
-  useEffect(() => { setTargetId(null) }, [user?.id])
-  const isUnassigned = !!user && !user.entitlements.some((e) => e.isAppAdmin || e.companies.length > 0)
-  const effCompany = (targetId ? companies.find((c) => c.id === targetId) : undefined) ?? company
-
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(true)
     try {
@@ -68,21 +57,15 @@ export function Tier3AccessPanel({
     }
   }
 
-  const setAccountRole = (role: string) => {
-    if (!user) return
-    if (!requireSuperAdmin(me, toast)) return
-    run('Account role updated', () => iam.setGlobalRole(user.id, role as GlobalRole))
-  }
-
   const accessFor = (appId: string): Access => {
     const ent = user?.entitlements.find((e) => e.appId === appId)
     if (!ent) return 'none'
     if (ent.isAppAdmin) return 'appadmin'
-    return ent.companies.some((c) => c.companyId === effCompany?.id) ? 'user' : 'none'
+    return ent.companies.some((c) => c.companyId === company?.id) ? 'user' : 'none'
   }
 
   const setAccess = (app: App, value: Access) => {
-    if (!user || !effCompany) return
+    if (!user || !company) return
     const ent = user.entitlements.find((e) => e.appId === app.id)
     // Granting App Admin OR demoting away from it crosses the app-wide admin boundary, which is
     // Super-Admin-only on the server — gate it client-side either way for a friendly toast.
@@ -96,20 +79,17 @@ export function Tier3AccessPanel({
         if (ent?.isAppAdmin) {
           await iam.setEntitlement(user.id, app.id, { entitled: false })
         } else {
-          await iam.removeCompanyAccess(user.id, app.id, effCompany.id)
+          await iam.removeCompanyAccess(user.id, app.id, company.id)
           if (ent && ent.companies.length <= 1) await iam.setEntitlement(user.id, app.id, { entitled: false })
         }
       } else {
-        const curRole = ent?.companies.find((c) => c.companyId === effCompany.id)?.role || 'ORDINARY_USER'
+        // Grants land as Ordinary User (or keep an already-assigned title) — refined
+        // role titles are managed inside each app's own App Roles screen, not here.
+        const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
         await iam.setEntitlement(user.id, app.id, { entitled: true, isAppAdmin: value === 'appadmin' })
-        await iam.setCompanyAccess(user.id, app.id, effCompany.id, curRole)
+        await iam.setCompanyAccess(user.id, app.id, company.id, curRole)
       }
     })
-  }
-
-  const setCompanyRole = (app: App, role: string) => {
-    if (!user || !effCompany) return
-    run('Role updated', () => iam.setCompanyAccess(user.id, app.id, effCompany.id, role))
   }
 
   const setDeletion = (app: App, val: boolean) => {
@@ -132,10 +112,12 @@ export function Tier3AccessPanel({
   }
 
   return (
-    <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: Granular IAM Control" className="w-[720px] shrink-0">
+    <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: App Access" className="w-[720px] shrink-0">
       {!user || !company ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center text-xs text-slate-500">
-          Select a user in the directory to manage their access.
+          {!user
+            ? 'Select a user in the directory (Tier 1) to manage their access.'
+            : 'Now select a company (Tier 2) — the app access below applies to the user within that company.'}
         </div>
       ) : (
         <>
@@ -183,40 +165,12 @@ export function Tier3AccessPanel({
               {isSelf ? <div className="mt-2 text-[10px] text-slate-500">You can't change your own account status here.</div> : null}
             </div>
 
-            {/* Account (portal-wide) role */}
-            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
-              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Account Role</div>
-              <StyledSelect tone="dark" value={String(user.globalRole)} onChange={setAccountRole} disabled={!superGate} className="w-full">
-                {GLOBAL_ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </StyledSelect>
-              {!superGate ? <div className="mt-1.5 text-[10px] text-slate-500">Only a Super Admin can change the account role.</div> : null}
-            </div>
-
-            {/* Assign-into-company picker — ALWAYS available: the grid can only select a
-                user in a tenant they already appear in, so without this there is no way
-                to grant them access to any OTHER company. Amber when the login has no
-                access anywhere yet (holding pen); neutral otherwise. */}
-            {companies.length > 0 ? (
-              <div className={'rounded-xl border p-3 ' + (isUnassigned ? 'border-amber-500/30 bg-amber-500/10' : 'border-slate-800 bg-slate-800/40')}>
-                <div className={'mb-1.5 text-[10px] font-semibold uppercase tracking-wider ' + (isUnassigned ? 'text-amber-300' : 'text-slate-500')}>Assign Into Company</div>
-                <StyledSelect tone="dark" value={effCompany ? effCompany.id : ''} onChange={(v) => setTargetId(v)} className="w-full">
-                  {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </StyledSelect>
-                <div className={'mt-1.5 text-[10px] ' + (isUnassigned ? 'text-amber-300/80' : 'text-slate-500')}>
-                  {isUnassigned
-                    ? 'This login has no access yet — the app grants below apply to the company chosen here.'
-                    : 'The app grants below apply to the company chosen here (defaults to the tenant selected on the left).'}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Per-app entitlement matrix within the targeted company */}
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Portal Entitlement Matrix · {(effCompany ?? company).name}</div>
+            {/* Per-app access within the Tier-2 company */}
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">App Access · {company.name}</div>
             <div className="space-y-2.5">
               {apps.map((app) => {
                 const acc = accessFor(app.id)
                 const ent = user.entitlements.find((e) => e.appId === app.id)
-                const curRole = ent?.companies.find((c) => c.companyId === (effCompany ?? company).id)?.role || 'ORDINARY_USER'
                 const granted = acc !== 'none'
                 const canDelete = !!ent?.canApproveDeletions
                 return (
@@ -226,23 +180,17 @@ export function Tier3AccessPanel({
                         <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-700/60 text-[10px] font-semibold text-slate-300">{initials(app.shortName || app.name)}</div>
                         <div className="min-w-0">
                           <div className="truncate text-xs font-medium text-slate-200">{app.name}</div>
-                          <div className="text-[10px] text-slate-500">Role Assignment</div>
+                          <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App-wide administrator' : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
                         </div>
                       </div>
-                      <StyledSelect tone="dark" value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={acc === 'appadmin' && !superGate} className="w-32 shrink-0">
+                      <StyledSelect tone="dark" value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={acc === 'appadmin' && !superGate} className="w-36 shrink-0">
                         <option value="none">No Access</option>
-                        <option value="user">User</option>
+                        <option value="user">Ordinary User</option>
                         {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin</option> : null}
                       </StyledSelect>
                     </div>
                     {granted ? (
                       <div className="mt-2.5 space-y-2 border-t border-slate-700/60 pt-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-slate-400">Role in {(effCompany ?? company).name}</span>
-                          <StyledSelect tone="dark" value={curRole} onChange={(r) => setCompanyRole(app, r)} className="w-32 shrink-0">
-                            {GLOBAL_ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                          </StyledSelect>
-                        </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className={'inline-flex items-center gap-1 text-[11px] font-medium ' + (canDelete ? 'text-emerald-400' : 'text-rose-400')}>
                             {canDelete ? <Check className="h-3 w-3" /> : <XIcon className="h-3 w-3" />}
