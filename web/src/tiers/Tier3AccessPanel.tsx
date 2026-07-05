@@ -85,8 +85,11 @@ export function Tier3AccessPanel({
       } else {
         // Grants land as Ordinary User (or keep an already-assigned title) — refined
         // role titles are managed inside each app's own App Roles screen, not here.
+        // Only send the isAppAdmin flag when the value actually crosses the admin
+        // boundary: the server treats ANY boolean as flag-setting (Super-Admin-only),
+        // so including `isAppAdmin: false` on a plain grant 403s a Portal Admin.
         const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
-        await iam.setEntitlement(user.id, app.id, { entitled: true, isAppAdmin: value === 'appadmin' })
+        await iam.setEntitlement(user.id, app.id, crossesAdmin ? { entitled: true, isAppAdmin: value === 'appadmin' } : { entitled: true })
         await iam.setCompanyAccess(user.id, app.id, company.id, curRole)
       }
     })

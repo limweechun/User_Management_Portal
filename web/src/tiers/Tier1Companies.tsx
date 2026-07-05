@@ -73,28 +73,48 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
       if (!window.confirm(`Remove ${selectedUser.fullName} from ${c.name}?\n\nAll their app access in this company will be revoked and it will disappear from their company switcher.`)) return
     }
     setBusyId(c.id)
+    // One app failing must not abort the rest or hide what did land — collect
+    // per-app failures, finish the loop, and ALWAYS reload so the checkbox
+    // reflects the true server state (partial grants included).
+    const failures: string[] = []
     try {
       if (next) {
         for (const e of ents) {
           if (e.companies.some((cc) => cc.companyId === c.id)) continue
-          const role = e.companies[0]?.role || 'ORDINARY_USER'
-          await iam.setCompanyAccess(selectedUser.id, e.appId, c.id, role)
+          try {
+            const role = e.companies[0]?.role || 'ORDINARY_USER'
+            await iam.setCompanyAccess(selectedUser.id, e.appId, c.id, role)
+          } catch (err: any) {
+            failures.push(`${e.appId}: ${err?.message || 'failed'}`)
+          }
         }
-        toast(`${c.name} added to ${selectedUser.fullName}'s company switcher`, 'ok')
       } else {
         for (const e of ents) {
           if (!e.companies.some((cc) => cc.companyId === c.id)) continue
-          await iam.removeCompanyAccess(selectedUser.id, e.appId, c.id)
-          if (e.companies.length <= 1 && !e.isAppAdmin) await iam.setEntitlement(selectedUser.id, e.appId, { entitled: false })
+          try {
+            await iam.removeCompanyAccess(selectedUser.id, e.appId, c.id)
+            if (e.companies.length <= 1 && !e.isAppAdmin) await iam.setEntitlement(selectedUser.id, e.appId, { entitled: false })
+          } catch (err: any) {
+            failures.push(`${e.appId}: ${err?.message || 'failed'}`)
+          }
         }
-        toast(`${selectedUser.fullName} removed from ${c.name}`, 'ok')
       }
-      const list = await reload()
-      const fresh = list.find((u) => u.id === selectedUser.id)
-      if (fresh) selectUser(fresh)
-    } catch (e: any) {
-      toast(e?.message || 'Failed to update company membership', 'bad')
+      if (failures.length > 0) {
+        toast(`Some apps failed — ${failures.join(' · ')}`, 'bad')
+      } else {
+        toast(
+          next
+            ? `${c.name} added to ${selectedUser.fullName}'s company switcher`
+            : `${selectedUser.fullName} removed from ${c.name}`,
+          'ok',
+        )
+      }
     } finally {
+      try {
+        const list = await reload()
+        const fresh = list.find((u) => u.id === selectedUser.id)
+        if (fresh) selectUser(fresh)
+      } catch { /* reload failure just leaves stale UI; next action re-syncs */ }
       setBusyId(null)
     }
   }
