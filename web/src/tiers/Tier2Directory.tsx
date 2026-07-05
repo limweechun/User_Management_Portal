@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Users } from 'lucide-react'
-import type { AdminUser } from '../lib/iam'
+import { iam, type AdminUser } from '../lib/iam'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useSortable } from '../hooks/useSortable'
 import { SortableHeader } from '../components/SortableHeader'
@@ -24,20 +24,35 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
 
   // A login with no app/company access at all (e.g. freshly created and not yet
-  // granted anything) belongs to no tenant — without special handling it would be
-  // invisible in EVERY tenant's grid and unmanageable. Surface it everywhere with
-  // a "no access yet" tag so it can be selected and granted access.
+  // granted anything) belongs to no tenant. Per the onboarding policy it lists in
+  // the "New Company" holding tenant — and only there — with a "no access yet" tag
+  // until an admin grants access. If no tenant matches that name, unassigned
+  // logins fall back to listing in every tenant, so they can never go invisible.
   const isUnassigned = (u: AdminUser) => !u.entitlements.some((e) => e.isAppAdmin || e.companies.length > 0)
+  const isHoldingName = (name: string) => /^new\s*company$/i.test(name.trim())
+  const isHoldingTenant = !!selectedCompany && isHoldingName(selectedCompany.name)
+  // null = still loading (assume it exists to avoid a flash of unassigned users everywhere).
+  const [holdingExists, setHoldingExists] = useState<boolean | null>(null)
+  useEffect(() => {
+    let on = true
+    iam.listCompanies()
+      .then((cs) => { if (on) setHoldingExists(cs.some((c) => isHoldingName(c.name))) })
+      .catch(() => { if (on) setHoldingExists(true) })
+    return () => { on = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const showUnassignedHere = isHoldingTenant || holdingExists === false
 
   const inCompany = useMemo(() => {
     if (!selectedCompany) return [] as AdminUser[]
     // App-wide admins (isAppAdmin) have access without a per-company row — include them too, or an
     // app admin with no company grant is invisible and unmanageable from the grid.
     return users.filter((u) =>
-      isUnassigned(u) ||
+      (isUnassigned(u) && showUnassignedHere) ||
       u.entitlements.some((e) => e.isAppAdmin || e.companies.some((c) => c.companyId === selectedCompany.id)),
     )
-  }, [users, selectedCompany])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [users, selectedCompany, showUnassignedHere])
 
   const visible = useMemo(() => {
     const byStatus = statusFilter === 'all' ? inCompany : inCompany.filter((u) => u.status === statusFilter)
@@ -126,7 +141,7 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
                           <div className="truncate text-[10px] text-slate-500">{u.email}</div>
                         </td>
                         <td className="border-b border-slate-800 px-3 py-2.5 text-xs text-slate-300">{roleLabel(u.globalRole)}</td>
-                        <td className="border-b border-slate-800 px-3 py-2.5"><StatusText status={u.status} /></td>
+                        <td className="border-b border-slate-800 px-3 py-2.5"><StatusText status={u.status} emailVerified={u.emailVerified} /></td>
                         <td className="border-b border-slate-800 px-3 py-2.5 text-[11px] text-slate-400">{fmtDate(u.createdAt)}</td>
                       </tr>
                     )
@@ -145,7 +160,11 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
   )
 }
 
-function StatusText({ status }: { status: string }) {
+function StatusText({ status, emailVerified }: { status: string; emailVerified?: boolean }) {
+  // An unverified email blocks sign-in even on an active account — surface it.
+  if (status === 'active' && emailVerified === false) {
+    return <span className="text-xs font-medium text-amber-400" title="This login cannot sign in until they click the verification link emailed to them">Not verified by email</span>
+  }
   const cls = status === 'active' ? 'text-emerald-400' : status === 'pending' ? 'text-amber-400' : 'text-slate-500'
   return <span className={'text-xs font-medium capitalize ' + cls}>{status}</span>
 }
