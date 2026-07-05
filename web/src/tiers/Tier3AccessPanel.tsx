@@ -192,17 +192,20 @@ export function Tier3AccessPanel({
               {!superGate ? <div className="mt-1.5 text-[10px] text-slate-500">Only a Super Admin can change the account role.</div> : null}
             </div>
 
-            {/* Assign-into-company picker: shown for a holding-pen login (or once a target
-                was chosen), so the grants below can land in ANY tenant, not just the one
-                the grid happened to be filtered on. */}
-            {(isUnassigned || targetId) && companies.length > 0 ? (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Assign Into Company</div>
+            {/* Assign-into-company picker — ALWAYS available: the grid can only select a
+                user in a tenant they already appear in, so without this there is no way
+                to grant them access to any OTHER company. Amber when the login has no
+                access anywhere yet (holding pen); neutral otherwise. */}
+            {companies.length > 0 ? (
+              <div className={'rounded-xl border p-3 ' + (isUnassigned ? 'border-amber-500/30 bg-amber-500/10' : 'border-slate-800 bg-slate-800/40')}>
+                <div className={'mb-1.5 text-[10px] font-semibold uppercase tracking-wider ' + (isUnassigned ? 'text-amber-300' : 'text-slate-500')}>Assign Into Company</div>
                 <StyledSelect tone="dark" value={effCompany ? effCompany.id : ''} onChange={(v) => setTargetId(v)} className="w-full">
                   {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </StyledSelect>
-                <div className="mt-1.5 text-[10px] text-amber-300/80">
-                  This login has no access yet — the app grants below apply to the company chosen here.
+                <div className={'mt-1.5 text-[10px] ' + (isUnassigned ? 'text-amber-300/80' : 'text-slate-500')}>
+                  {isUnassigned
+                    ? 'This login has no access yet — the app grants below apply to the company chosen here.'
+                    : 'The app grants below apply to the company chosen here (defaults to the tenant selected on the left).'}
                 </div>
               </div>
             ) : null}
