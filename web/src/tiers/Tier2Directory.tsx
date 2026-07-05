@@ -23,11 +23,18 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
   // Focus the directory on active users by default; switchable to inactive / all.
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
 
+  // A login with no app/company access at all (e.g. freshly created and not yet
+  // granted anything) belongs to no tenant — without special handling it would be
+  // invisible in EVERY tenant's grid and unmanageable. Surface it everywhere with
+  // a "no access yet" tag so it can be selected and granted access.
+  const isUnassigned = (u: AdminUser) => !u.entitlements.some((e) => e.isAppAdmin || e.companies.length > 0)
+
   const inCompany = useMemo(() => {
     if (!selectedCompany) return [] as AdminUser[]
     // App-wide admins (isAppAdmin) have access without a per-company row — include them too, or an
     // app admin with no company grant is invisible and unmanageable from the grid.
     return users.filter((u) =>
+      isUnassigned(u) ||
       u.entitlements.some((e) => e.isAppAdmin || e.companies.some((c) => c.companyId === selectedCompany.id)),
     )
   }, [users, selectedCompany])
@@ -112,7 +119,10 @@ export function Tier2Directory({ users, loading }: { users: AdminUser[]; loading
                       >
                         <td className="border-b border-slate-800 px-3 py-2.5 font-mono text-[11px] text-slate-400">{u.userCode || '—'}</td>
                         <td className="border-b border-slate-800 px-3 py-2.5">
-                          <div className={'text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>{u.fullName}</div>
+                          <div className={'text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>
+                            {u.fullName}
+                            {isUnassigned(u) && <span className="ml-1.5 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400 ring-1 ring-amber-500/30" title="No app or company access granted yet — select the user to grant access">no access yet</span>}
+                          </div>
                           <div className="truncate text-[10px] text-slate-500">{u.email}</div>
                         </td>
                         <td className="border-b border-slate-800 px-3 py-2.5 text-xs text-slate-300">{roleLabel(u.globalRole)}</td>
