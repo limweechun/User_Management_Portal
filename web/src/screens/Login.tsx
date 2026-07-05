@@ -15,10 +15,12 @@ const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
 export function Login({
   initialMode = 'login',
   resetToken,
+  initialNotice,
   onAuthed,
 }: {
   initialMode?: Mode
   resetToken?: string
+  initialNotice?: string
   onAuthed: () => void
 }) {
   const { toast } = useToast()
@@ -31,7 +33,7 @@ export function Login({
   const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(initialNotice ?? '')
   const [pi, setPi] = useState(0)
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function Login({
         onAuthed()
       } else if (mode === 'register') {
         await iam.register({ email: email.trim(), fullName: fullName.trim(), password })
-        setNotice('Account created. Verify your email, then sign in.')
+        setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
       } else if (mode === 'forgot') {
         await iam.forgotPassword(email.trim())

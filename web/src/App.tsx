@@ -12,12 +12,26 @@ export function App() {
   const { me, refresh, signOut } = useSession()
   const [phase, setPhase] = useState<Phase>('booting')
   const [resetToken, setResetToken] = useState<string | undefined>(undefined)
+  const [loginNotice, setLoginNotice] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     void (async () => {
       const params = new URLSearchParams(location.search)
       if (params.get('logout') === '1') {
         try { await iam.logout() } catch { /* best effort cookie clear */ }
+        history.replaceState(null, '', location.pathname)
+        setPhase('login')
+        return
+      }
+      // Emailed verification link (?verify=<token>) from self-registration.
+      const vt = params.get('verify')
+      if (vt) {
+        try {
+          await iam.verifyEmail(vt)
+          setLoginNotice('Email verified — please sign in. An administrator will grant your app access.')
+        } catch {
+          setLoginNotice('That verification link is invalid or already used — try signing in.')
+        }
         history.replaceState(null, '', location.pathname)
         setPhase('login')
         return
@@ -44,7 +58,7 @@ export function App() {
     )
   }
   if (phase === 'login' || phase === 'reset') {
-    return <Login initialMode={phase === 'reset' ? 'reset' : 'login'} resetToken={resetToken} onAuthed={toApp} />
+    return <Login initialMode={phase === 'reset' ? 'reset' : 'login'} resetToken={resetToken} initialNotice={loginNotice} onAuthed={toApp} />
   }
   if (phase === 'awaiting') {
     return (
