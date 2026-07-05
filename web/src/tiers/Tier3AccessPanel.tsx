@@ -40,6 +40,19 @@ export function Tier3AccessPanel({
     iam.listApps().then((a) => setApps(a.filter((x) => x.active !== false))).catch(() => {})
   }, [])
 
+  // "Assign into company": a login with no access yet lives in the New-Company holding
+  // pen, so the grid can only select it there — this picker chooses which company the
+  // grants below actually target (defaults to the active tenant; sticky while the same
+  // user stays selected, so a multi-app assignment lands in one company).
+  const [companies, setCompanies] = useState<Company[]>([])
+  useEffect(() => {
+    iam.listCompanies().then(setCompanies).catch(() => {})
+  }, [])
+  const [targetId, setTargetId] = useState<string | null>(null)
+  useEffect(() => { setTargetId(null) }, [user?.id])
+  const isUnassigned = !!user && !user.entitlements.some((e) => e.isAppAdmin || e.companies.length > 0)
+  const effCompany = (targetId ? companies.find((c) => c.id === targetId) : undefined) ?? company
+
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(true)
     try {
@@ -65,11 +78,11 @@ export function Tier3AccessPanel({
     const ent = user?.entitlements.find((e) => e.appId === appId)
     if (!ent) return 'none'
     if (ent.isAppAdmin) return 'appadmin'
-    return ent.companies.some((c) => c.companyId === company?.id) ? 'user' : 'none'
+    return ent.companies.some((c) => c.companyId === effCompany?.id) ? 'user' : 'none'
   }
 
   const setAccess = (app: App, value: Access) => {
-    if (!user || !company) return
+    if (!user || !effCompany) return
     const ent = user.entitlements.find((e) => e.appId === app.id)
     // Granting App Admin OR demoting away from it crosses the app-wide admin boundary, which is
     // Super-Admin-only on the server — gate it client-side either way for a friendly toast.
@@ -83,20 +96,20 @@ export function Tier3AccessPanel({
         if (ent?.isAppAdmin) {
           await iam.setEntitlement(user.id, app.id, { entitled: false })
         } else {
-          await iam.removeCompanyAccess(user.id, app.id, company.id)
+          await iam.removeCompanyAccess(user.id, app.id, effCompany.id)
           if (ent && ent.companies.length <= 1) await iam.setEntitlement(user.id, app.id, { entitled: false })
         }
       } else {
-        const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
+        const curRole = ent?.companies.find((c) => c.companyId === effCompany.id)?.role || 'ORDINARY_USER'
         await iam.setEntitlement(user.id, app.id, { entitled: true, isAppAdmin: value === 'appadmin' })
-        await iam.setCompanyAccess(user.id, app.id, company.id, curRole)
+        await iam.setCompanyAccess(user.id, app.id, effCompany.id, curRole)
       }
     })
   }
 
   const setCompanyRole = (app: App, role: string) => {
-    if (!user || !company) return
-    run('Role updated', () => iam.setCompanyAccess(user.id, app.id, company.id, role))
+    if (!user || !effCompany) return
+    run('Role updated', () => iam.setCompanyAccess(user.id, app.id, effCompany.id, role))
   }
 
   const setDeletion = (app: App, val: boolean) => {
@@ -179,13 +192,28 @@ export function Tier3AccessPanel({
               {!superGate ? <div className="mt-1.5 text-[10px] text-slate-500">Only a Super Admin can change the account role.</div> : null}
             </div>
 
-            {/* Per-app entitlement matrix within the active company */}
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Portal Entitlement Matrix · {company.name}</div>
+            {/* Assign-into-company picker: shown for a holding-pen login (or once a target
+                was chosen), so the grants below can land in ANY tenant, not just the one
+                the grid happened to be filtered on. */}
+            {(isUnassigned || targetId) && companies.length > 0 ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Assign Into Company</div>
+                <StyledSelect tone="dark" value={effCompany ? effCompany.id : ''} onChange={(v) => setTargetId(v)} className="w-full">
+                  {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </StyledSelect>
+                <div className="mt-1.5 text-[10px] text-amber-300/80">
+                  This login has no access yet — the app grants below apply to the company chosen here.
+                </div>
+              </div>
+            ) : null}
+
+            {/* Per-app entitlement matrix within the targeted company */}
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Portal Entitlement Matrix · {(effCompany ?? company).name}</div>
             <div className="space-y-2.5">
               {apps.map((app) => {
                 const acc = accessFor(app.id)
                 const ent = user.entitlements.find((e) => e.appId === app.id)
-                const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
+                const curRole = ent?.companies.find((c) => c.companyId === (effCompany ?? company).id)?.role || 'ORDINARY_USER'
                 const granted = acc !== 'none'
                 const canDelete = !!ent?.canApproveDeletions
                 return (
@@ -207,7 +235,7 @@ export function Tier3AccessPanel({
                     {granted ? (
                       <div className="mt-2.5 space-y-2 border-t border-slate-700/60 pt-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-slate-400">Role in {company.name}</span>
+                          <span className="text-[11px] text-slate-400">Role in {(effCompany ?? company).name}</span>
                           <StyledSelect tone="dark" value={curRole} onChange={(r) => setCompanyRole(app, r)} className="w-32 shrink-0">
                             {GLOBAL_ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </StyledSelect>
