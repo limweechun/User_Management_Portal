@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Users } from 'lucide-react'
-import { iam, isSuperAdmin, type AdminUser, type GlobalRole } from '../lib/iam'
+import { iam, isPortalAdmin, isSuperAdmin, type AdminUser, type GlobalRole } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useToast } from '../components/Toast'
@@ -41,6 +41,31 @@ export function Tier2Directory({
   // Focus the directory on active users by default; switchable to inactive / all.
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
   const [savingRole, setSavingRole] = useState<string | null>(null)
+  const [statusBusy, setStatusBusy] = useState(false)
+
+  // Account status lives HERE in Tier 1 (it's a global, per-login property — not
+  // scoped to a company or app). Portal-admin-gated, never on your own account,
+  // and only a Super Admin may touch a portal-authority account (mirrors the server).
+  const toggleStatus = async (u: AdminUser) => {
+    const next = u.status === 'active' ? 'inactive' : 'active'
+    if (
+      next === 'inactive' &&
+      !window.confirm(`Deactivate ${u.fullName}?\n\nThey will be blocked from signing in to every app until reactivated.`)
+    )
+      return
+    setStatusBusy(true)
+    try {
+      await iam.setUserStatus(u.id, next)
+      const list = await reload()
+      const fresh = list.find((x) => x.id === u.id)
+      if (fresh) selectUser(fresh)
+      toast(next === 'inactive' ? 'User deactivated' : 'User reactivated', 'ok')
+    } catch (e: any) {
+      toast(e?.message || 'Action failed', 'bad')
+    } finally {
+      setStatusBusy(false)
+    }
+  }
 
   // A login with no app/company access at all (e.g. freshly self-registered) — tagged
   // so admins can spot pending onboarding work at a glance.
@@ -108,6 +133,48 @@ export function Tier2Directory({
             </button>
           ))}
         </div>
+        {/* Account status of the selected user — lifecycle dates + activate/deactivate. */}
+        {selectedUser ? (() => {
+          const su = selectedUser
+          const isSelf = !!me && me.user.id === su.id
+          const targetHasAuthority = su.platformRole === 'admin' || su.platformRole === 'superadmin'
+          const canManageStatus = isPortalAdmin(me) && !isSelf && (!targetHasAuthority || isSuperAdmin(me))
+          return (
+            <div className="mt-2 rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Account Status · {su.fullName}</div>
+                  <StatusBadge status={su.status} />
+                </div>
+                {canManageStatus ? (
+                  <button
+                    onClick={() => toggleStatus(su)}
+                    disabled={statusBusy}
+                    className={
+                      'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 disabled:opacity-50 ' +
+                      (su.status === 'active'
+                        ? 'border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20')
+                    }
+                  >
+                    {su.status === 'active' ? 'Deactivate' : 'Reactivate'}
+                  </button>
+                ) : null}
+              </div>
+              <div className="mt-2.5 grid grid-cols-2 gap-2 border-t border-slate-700/60 pt-2.5">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Created</div>
+                  <div className="text-[11px] text-slate-300">{fmtDate(su.createdAt)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Deactivated</div>
+                  <div className="text-[11px] text-slate-300">{su.status === 'inactive' ? fmtDate(su.deactivatedAt) : '—'}</div>
+                </div>
+              </div>
+              {isSelf ? <div className="mt-2 text-[10px] text-slate-500">You can't change your own account status here.</div> : null}
+            </div>
+          )
+        })() : null}
       </div>
       <div className="mt-2 min-h-0 flex-1 overflow-auto px-2">
         <table className="w-full border-separate border-spacing-0">
@@ -174,6 +241,16 @@ export function Tier2Directory({
       </div>
     </TierCard>
   )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const tone =
+    status === 'active'
+      ? 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30'
+      : status === 'pending'
+        ? 'bg-amber-500/15 text-amber-300 ring-amber-500/30'
+        : 'bg-slate-600/20 text-slate-400 ring-slate-500/30'
+  return <span className={'inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ' + tone}>{status}</span>
 }
 
 function StatusText({ status, emailVerified }: { status: string; emailVerified?: boolean }) {

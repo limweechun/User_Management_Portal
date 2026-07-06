@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Shield, Check, X as XIcon } from 'lucide-react'
-import { iam, isPortalAdmin, isSuperAdmin, type AdminUser, type App, type Company } from '../lib/iam'
+import { iam, isSuperAdmin, type AdminUser, type App, type Company } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useToast } from '../components/Toast'
@@ -8,13 +8,13 @@ import { StyledSelect } from '../components/StyledSelect'
 import { Toggle } from '../components/Toggle'
 import { TierCard } from '../components/TierCard'
 import { requireSuperAdmin } from '../lib/securityGate'
-import { fmtDate, initials } from '../lib/util'
+import { initials } from '../lib/util'
 
 type Access = 'none' | 'user' | 'appadmin'
 
 // Tier 3 — App Access (right column). For the user picked in Tier 1, within the company
 // picked in Tier 2: one dropdown per app — No Access / Ordinary User / App Admin — plus
-// account status and deletion-approval rights. Global role lives in Tier 1; finer role
+// deletion-approval rights. Global role and account status live in Tier 1; finer role
 // titles are assigned INSIDE each app by its admins. Super-Admin-only actions are gated
 // client-side (and re-enforced server-side). Every control writes immediately.
 export function Tier3AccessPanel({
@@ -32,11 +32,6 @@ export function Tier3AccessPanel({
   const [apps, setApps] = useState<App[]>([])
   const [busy, setBusy] = useState(false)
   const superGate = isSuperAdmin(me)
-  // Deactivation is portal-admin-gated (matches the server) and never allowed on your own account.
-  const isSelf = !!me && me.user.id === user?.id
-  // Mirror the server rule: only a Super Admin may change the status of a portal-authority account.
-  const targetHasAuthority = user?.platformRole === 'admin' || user?.platformRole === 'superadmin'
-  const canManageStatus = isPortalAdmin(me) && !isSelf && (!targetHasAuthority || isSuperAdmin(me))
 
   useEffect(() => {
     iam.listApps().then((a) => setApps(a.filter((x) => x.active !== false))).catch(() => {})
@@ -103,17 +98,6 @@ export function Tier3AccessPanel({
     )
   }
 
-  const toggleStatus = () => {
-    if (!user) return
-    const next = user.status === 'active' ? 'inactive' : 'active'
-    if (
-      next === 'inactive' &&
-      !window.confirm(`Deactivate ${user.fullName}?\n\nThey will be blocked from signing in to every app until reactivated.`)
-    )
-      return
-    run(next === 'inactive' ? 'User deactivated' : 'User reactivated', () => iam.setUserStatus(user.id, next))
-  }
-
   return (
     <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: App Access" className="w-[720px] shrink-0">
       {!user || !company ? (
@@ -133,42 +117,7 @@ export function Tier3AccessPanel({
           </div>
 
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
-            {/* Account status — lifecycle dates + activate/deactivate (portal-admin only) */}
-            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Account Status</div>
-                  <StatusBadge status={user.status} />
-                </div>
-                {canManageStatus ? (
-                  <button
-                    onClick={toggleStatus}
-                    disabled={busy}
-                    className={
-                      'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 disabled:opacity-50 ' +
-                      (user.status === 'active'
-                        ? 'border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
-                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20')
-                    }
-                  >
-                    {user.status === 'active' ? 'Deactivate' : 'Reactivate'}
-                  </button>
-                ) : null}
-              </div>
-              <div className="mt-2.5 grid grid-cols-2 gap-2 border-t border-slate-700/60 pt-2.5">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Created</div>
-                  <div className="text-[11px] text-slate-300">{fmtDate(user.createdAt)}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Deactivated</div>
-                  <div className="text-[11px] text-slate-300">{user.status === 'inactive' ? fmtDate(user.deactivatedAt) : '—'}</div>
-                </div>
-              </div>
-              {isSelf ? <div className="mt-2 text-[10px] text-slate-500">You can't change your own account status here.</div> : null}
-            </div>
-
-            {/* Per-app access within the Tier-2 company */}
+            {/* Per-app access within the Tier-2 company (account status lives in Tier 1) */}
             <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">App Access · {company.name}</div>
             <div className="space-y-2.5">
               {apps.map((app) => {
@@ -220,12 +169,3 @@ export function Tier3AccessPanel({
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'active'
-      ? 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30'
-      : status === 'pending'
-        ? 'bg-amber-500/15 text-amber-300 ring-amber-500/30'
-        : 'bg-slate-600/20 text-slate-400 ring-slate-500/30'
-  return <span className={'inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ' + tone}>{status}</span>
-}
