@@ -86,6 +86,9 @@ export interface AdminUser {
   globalRole: GlobalRole | string
   platformRole: PlatformRole
   entitlements: AdminUserEntitlement[]
+  // Companies the user belongs to independent of app access (Tier-2 tick for a
+  // user with no app grants yet). Grants nothing inside any app by itself.
+  memberCompanyIds?: string[]
 }
 
 export interface Company {
@@ -208,6 +211,12 @@ export const iam = {
     req('PUT', '/admin/users/' + userId + '/apps/' + appId + '/companies/' + companyId, { role }),
   removeCompanyAccess: (userId: string, appId: string, companyId: string) =>
     req('DELETE', '/admin/users/' + userId + '/apps/' + appId + '/companies/' + companyId),
+
+  // Admin — standalone company membership (no app access implied)
+  addMembership: (userId: string, companyId: string) =>
+    req('PUT', '/admin/users/' + userId + '/memberships/' + companyId),
+  removeMembership: (userId: string, companyId: string) =>
+    req('DELETE', '/admin/users/' + userId + '/memberships/' + companyId),
 
   // Admin — companies
   listCompanies: () => req<Company[]>('GET', '/admin/companies'),

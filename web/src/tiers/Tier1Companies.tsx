@@ -9,9 +9,10 @@ import { TierCard } from '../components/TierCard'
 
 // Tier 2 — Company Scope: the master list of tenants. Selecting one sets which company
 // the Tier-3 app grants apply to (the selected user carries over from Tier 1). Each row
-// has a MEMBERSHIP TICK BOX for the selected user: ticked = the user holds per-company
-// grants there, so the company appears in their in-app company switcher; unticking
-// removes every grant they hold in that company (it vanishes from their switchers).
+// has a MEMBERSHIP TICK BOX for the selected user: ticked = the user is a member of
+// that company (a standalone CompanyMember record — works even with zero app access)
+// and/or holds per-company app grants there; unticking removes the membership AND
+// every grant they hold in that company (it vanishes from their switchers).
 // The "+ Register" button and the row pencil open the SAME CompanyDrawer (create when
 // company=null, edit otherwise).
 export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> }) {
@@ -63,17 +64,15 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
   const toggleMembership = async (c: Company, next: boolean) => {
     if (!selectedUser || busyId) return
     const ents = selectedUser.entitlements
-    if (next && ents.length === 0) {
-      // A brand-new user has no apps to replicate — take the admin straight to the
-      // right place: focus this company so Tier 3 is ready for the first grant.
-      selectCompany(c)
-      toast(`${selectedUser.fullName} has no app access yet — company selected, now grant their app access in Tier 3 →`, 'ok')
-      return
-    }
+    const grantsHere = ents.filter((e) => e.companies.some((cc) => cc.companyId === c.id))
+    const isMember = !!selectedUser.memberCompanyIds?.includes(c.id)
     if (!next) {
-      const inHere = ents.filter((e) => e.companies.some((cc) => cc.companyId === c.id))
-      if (inHere.length === 0) return
-      if (!window.confirm(`Remove ${selectedUser.fullName} from ${c.name}?\n\nAll their app access in this company will be revoked and it will disappear from their company switcher.`)) return
+      if (grantsHere.length === 0 && !isMember) return
+      const msg =
+        grantsHere.length > 0
+          ? `Remove ${selectedUser.fullName} from ${c.name}?\n\nAll their app access in this company will be revoked and it will disappear from their company switcher.`
+          : `Remove ${selectedUser.fullName} from ${c.name}?\n\nThey have no app access here — this only removes the company membership.`
+      if (!window.confirm(msg)) return
     }
     setBusyId(c.id)
     // One app failing must not abort the rest or hide what did land — collect
@@ -82,6 +81,13 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
     const failures: string[] = []
     try {
       if (next) {
+        // Membership is its own record, independent of app access — the tick
+        // sticks even for a brand-new user with zero app grants.
+        try {
+          await iam.addMembership(selectedUser.id, c.id)
+        } catch (err: any) {
+          failures.push(`membership: ${err?.message || 'failed'}`)
+        }
         for (const e of ents) {
           if (e.companies.some((cc) => cc.companyId === c.id)) continue
           try {
@@ -92,8 +98,7 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
           }
         }
       } else {
-        for (const e of ents) {
-          if (!e.companies.some((cc) => cc.companyId === c.id)) continue
+        for (const e of grantsHere) {
           try {
             await iam.removeCompanyAccess(selectedUser.id, e.appId, c.id)
             if (e.companies.length <= 1 && !e.isAppAdmin) await iam.setEntitlement(selectedUser.id, e.appId, { entitled: false })
@@ -101,9 +106,18 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
             failures.push(`${e.appId}: ${err?.message || 'failed'}`)
           }
         }
+        try {
+          await iam.removeMembership(selectedUser.id, c.id)
+        } catch (err: any) {
+          failures.push(`membership: ${err?.message || 'failed'}`)
+        }
       }
       if (failures.length > 0) {
         toast(`Some apps failed — ${failures.join(' · ')}`, 'bad')
+      } else if (next && ents.length === 0) {
+        // Brand-new user: membership saved — point the admin at Tier 3 for the first grant.
+        selectCompany(c)
+        toast(`${selectedUser.fullName} is now a member of ${c.name} — grant their app access in Tier 3 →`, 'ok')
       } else {
         toast(
           next
@@ -162,9 +176,12 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
             {filtered.map((c) => {
               const sel = selectedCompany?.id === c.id
               const active = (c.status || '').toLowerCase() === 'active'
-              // The selected user's footprint: explicit per-company grants only (app-wide
-              // admins have no company rows — their access shows in Tier 3 regardless).
-              const userHasAccess = !!selectedUser?.entitlements.some((e) => e.companies.some((cc) => cc.companyId === c.id))
+              // The selected user's footprint: explicit per-company grants OR a standalone
+              // company membership (a member with no app access yet still shows ticked).
+              // App-wide admins have no company rows — their access shows in Tier 3 regardless.
+              const userHasAccess =
+                !!selectedUser?.entitlements.some((e) => e.companies.some((cc) => cc.companyId === c.id)) ||
+                !!selectedUser?.memberCompanyIds?.includes(c.id)
               return (
                 <div
                   key={c.id}
