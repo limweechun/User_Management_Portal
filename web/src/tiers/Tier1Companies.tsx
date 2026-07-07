@@ -64,7 +64,10 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
     if (!selectedUser || busyId) return
     const ents = selectedUser.entitlements
     if (next && ents.length === 0) {
-      toast('No apps to place in the switcher yet — select this company, then grant app access in Tier 3', 'bad')
+      // A brand-new user has no apps to replicate — take the admin straight to the
+      // right place: focus this company so Tier 3 is ready for the first grant.
+      selectCompany(c)
+      toast(`${selectedUser.fullName} has no app access yet — company selected, now grant their app access in Tier 3 →`, 'ok')
       return
     }
     if (!next) {
