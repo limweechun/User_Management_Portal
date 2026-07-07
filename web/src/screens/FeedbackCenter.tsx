@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { MessageSquare, Inbox, Eye, CheckCircle, Search, Download } from 'lucide-react'
+import { MessageSquare, Inbox, Eye, CheckCircle, Search, Download, Paperclip } from 'lucide-react'
 import { iam, type Feedback, type App } from '../lib/iam'
 import { useToast } from '../components/Toast'
 import { StyledSelect } from '../components/StyledSelect'
@@ -12,6 +12,7 @@ const STATUSES: Feedback['status'][] = ['new', 'reviewed', 'resolved']
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const stars = (n?: number | null) => (n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '')
 const clip = (s: string) => (s.length > 60 ? s.slice(0, 60) + '…' : s)
+const fmtSize = (n: number) => (n >= 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB')
 
 export function FeedbackCenter() {
   const { toast } = useToast()
@@ -198,7 +199,14 @@ export function FeedbackCenter() {
                       {r.email ? <div className="text-[10px] text-slate-400">{r.email}</div> : null}
                     </td>
                     <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-400">{FB_CAT[r.category] || r.category}</td>
-                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-300">{clip(r.message)}</td>
+                    <td className="border-b border-slate-800 px-3 py-2 text-xs text-slate-300">
+                      {clip(r.message)}
+                      {r.attachments && r.attachments.length > 0 ? (
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400" title={r.attachments.map((a) => a.name).join(', ')}>
+                          <Paperclip className="h-3 w-3" /> {r.attachments.length}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="border-b border-slate-800 px-3 py-2 text-xs text-amber-400" title={r.rating ? String(r.rating) : ''}>{stars(r.rating)}</td>
                     <td className="border-b border-slate-800 px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <StyledSelect value={r.status} onChange={(v) => void changeStatus(r.id, v)} className="w-32" tone="dark">
@@ -246,6 +254,26 @@ export function FeedbackCenter() {
                 {detail.message}
               </div>
             </div>
+            {detail.attachments && detail.attachments.length > 0 ? (
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">Attachments ({detail.attachments.length})</div>
+                <div className="mt-1.5 space-y-1">
+                  {detail.attachments.map((a) => (
+                    <a
+                      key={a.id}
+                      href={iam.feedbackAttachmentUrl(detail.id, a.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-200 transition-all duration-200 hover:border-emerald-500/40 hover:bg-slate-800"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                      <span className="shrink-0 text-[10px] text-slate-500">{fmtSize(a.size)}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </Drawer>

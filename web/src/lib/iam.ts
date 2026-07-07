@@ -138,6 +138,13 @@ export interface AuditRow {
 }
 export interface AuditPage { items: AuditRow[]; total: number; actions: string[] }
 
+export interface FeedbackAttachment {
+  id: string
+  name: string
+  mime: string
+  size: number // decoded bytes
+}
+
 export interface Feedback {
   id: string
   appId: string
@@ -151,6 +158,7 @@ export interface Feedback {
   status: 'new' | 'reviewed' | 'resolved'
   createdAt: string
   updatedAt: string
+  attachments?: FeedbackAttachment[]
 }
 
 export interface Branding {
@@ -256,8 +264,16 @@ export const iam = {
         (f?.q ? '&q=' + encodeURIComponent(f.q) : ''),
     ),
   setFeedbackStatus: (id: string, status: string) => req('PATCH', '/admin/feedback/' + id, { status }),
-  submitFeedback: (b: { app: string; category: string; rating?: number | null; message: string }) =>
-    req('POST', '/feedback', b),
+  // Same-origin URL for one attachment's bytes (cookie auth applies on the GET).
+  feedbackAttachmentUrl: (feedbackId: string, attachmentId: string) =>
+    BASE + '/admin/feedback/' + feedbackId + '/attachments/' + attachmentId,
+  submitFeedback: (b: {
+    app: string
+    category: string
+    rating?: number | null
+    message: string
+    attachments?: { name: string; mime: string; data: string }[]
+  }) => req('POST', '/feedback', b),
   loadSettings: () => req<Record<string, any>>('GET', '/admin/settings'),
   saveSetting: (key: string, value: any) => req('PUT', '/admin/settings/' + encodeURIComponent(key), { value }),
   getEmailConfig: () => req<any>('GET', '/admin/email-config'),
