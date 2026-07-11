@@ -1,7 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent, type InputHTMLAttributes } from 'react'
-import { ImagePlus, Trash2, X } from 'lucide-react'
+import { ImagePlus, ShieldAlert, Trash2, X } from 'lucide-react'
 import { useToast } from './Toast'
-import { StyledSelect } from './StyledSelect'
 import { iam, type Company } from '../lib/iam'
 
 const EMPTY_FORM = {
@@ -40,12 +39,14 @@ export function CompanyDrawer({
   const [logo, setLogo] = useState<string | undefined>(undefined) // undefined = unchanged, '' = clear, data-URL = new
   const [curLogo, setCurLogo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [deleting, setDeleting] = useState(false) // showing the deletion-request form
+  const [reason, setReason] = useState('')
 
   useEffect(() => {
     if (!open) return
     if (company) { setF(fromCompany(company)); setStatus(company.status || 'active'); setCurLogo(company.logo ?? null) }
     else { setF({ ...EMPTY_FORM }); setStatus('active'); setCurLogo(null) }
-    setLogo(undefined)
+    setLogo(undefined); setDeleting(false); setReason('')
   }, [open, company])
 
   useEffect(() => {
@@ -75,7 +76,8 @@ export function CompanyDrawer({
     if (!f.name.trim()) { toast('Company name is required', 'bad'); return }
     setBusy(true)
     try {
-      const payload: Partial<Company> = { ...f, name: f.name.trim(), status }
+      // Profile only — status changes go through the deletion request / reactivate.
+      const payload: Partial<Company> = { ...f, name: f.name.trim() }
       if (logo !== undefined) payload.logo = logo // '' clears server-side, data-URL sets it
       const saved = isEdit
         ? ({ ...company, ...((await iam.updateCompany(company!.id, payload)) as Company) } as Company)
@@ -87,6 +89,30 @@ export function CompanyDrawer({
     } finally {
       setBusy(false)
     }
+  }
+
+  // File a deletion (retire) request — needs two admin approvals before it takes effect.
+  const fileDeletion = async () => {
+    setBusy(true)
+    try {
+      await iam.requestCompanyDeletion(company!.id, reason.trim() || undefined)
+      toast('Deletion request filed — it needs two admin approvals', 'ok')
+      setDeleting(false); setReason(''); onClose()
+    } catch (err: any) {
+      toast(err?.message || 'Could not file the deletion request', 'bad')
+    } finally { setBusy(false) }
+  }
+
+  // Reactivating an inactive company is a direct action (not gated).
+  const reactivate = async () => {
+    setBusy(true)
+    try {
+      const updated = { ...company, ...((await iam.updateCompany(company!.id, { status: 'active' })) as Company) } as Company
+      toast('Company reactivated', 'ok')
+      onSaved(updated, false)
+    } catch (err: any) {
+      toast(err?.message || 'Could not reactivate the company', 'bad')
+    } finally { setBusy(false) }
   }
 
   if (!open) return null
@@ -149,13 +175,41 @@ export function CompanyDrawer({
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Status</span>
-              <StyledSelect tone="dark" value={status} onChange={(v) => setStatus(v as 'active' | 'inactive')} className="w-36">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </StyledSelect>
-            </div>
+            {isEdit && (
+              <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Status</div>
+                    <div className={'mt-0.5 text-xs font-medium ' + (status === 'active' ? 'text-emerald-300' : 'text-slate-400')}>{status === 'active' ? 'Active' : 'Inactive'}</div>
+                  </div>
+                  {status === 'active' ? (
+                    !deleting && (
+                      <button type="button" onClick={() => setDeleting(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 px-3 py-1.5 text-xs font-medium text-rose-300 transition-all duration-200 hover:bg-rose-500/10">
+                        <Trash2 className="h-3.5 w-3.5" /> Delete company…
+                      </button>
+                    )
+                  ) : (
+                    <button type="button" disabled={busy} onClick={reactivate} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-all duration-200 hover:bg-emerald-500/10 disabled:opacity-60">
+                      Reactivate
+                    </button>
+                  )}
+                </div>
+                {deleting && (
+                  <div className="mt-3 border-t border-slate-800 pt-3">
+                    <div className="mb-2 flex items-start gap-1.5 text-[11px] text-rose-300/90">
+                      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>Retiring needs <strong>one other admin's approval</strong> (two people total). It deactivates the company (reversible) — app data is untouched.</span>
+                    </div>
+                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason (optional)"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:border-rose-500 focus:outline-none focus:ring-4 focus:ring-rose-500/20" />
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button type="button" onClick={() => { setDeleting(false); setReason('') }} className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60">Cancel</button>
+                      <button type="button" disabled={busy} onClick={fileDeletion} className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-rose-400 disabled:opacity-60">{busy ? 'Filing…' : 'Submit deletion request'}</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={onClose} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/60">Cancel</button>

@@ -115,6 +115,33 @@ export interface Company {
   inactiveUsers?: number
 }
 
+export interface CompanyDeletionApproval {
+  id: string
+  approverUserId: string
+  approverName?: string | null
+  decision: 'approve' | 'reject'
+  comment?: string | null
+  createdAt: string
+}
+
+export interface CompanyDeletionRequest {
+  id: string
+  companyId: string
+  companyName: string
+  action: string
+  reason?: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+  requestedBy: string
+  requestedByName?: string | null
+  resolvedAt?: string | null
+  createdAt: string
+  approvals: CompanyDeletionApproval[]
+  company?: { id: string; name: string; status: string; companyCode?: string | null }
+}
+
+// Approvals needed to execute a company retirement (mirror of the IAM constant).
+export const COMPANY_DELETION_APPROVALS_REQUIRED = 2
+
 export interface App {
   id: string
   name: string
@@ -230,6 +257,19 @@ export const iam = {
   listCompanies: () => req<Company[]>('GET', '/admin/companies'),
   createCompany: (data: Partial<Company>) => req<Company>('POST', '/admin/companies', data),
   updateCompany: (id: string, patch: Partial<Company>) => req('PATCH', '/admin/companies/' + id, patch),
+
+  // Admin — company deletion (retire) approvals: file a request, then TWO distinct
+  // Super-Admin/Admin approvals retire (deactivate) the company.
+  requestCompanyDeletion: (id: string, reason?: string) =>
+    req<CompanyDeletionRequest>('POST', '/admin/companies/' + id + '/deletion-request', { reason: reason || null }),
+  listCompanyDeletionRequests: (status?: string) =>
+    req<CompanyDeletionRequest[]>('GET', '/admin/companies/deletion-requests' + (status ? '?status=' + encodeURIComponent(status) : '')),
+  approveCompanyDeletion: (reqId: string, comment?: string) =>
+    req('POST', '/admin/companies/deletion-requests/' + reqId + '/approve', { comment: comment || null }),
+  rejectCompanyDeletion: (reqId: string, comment?: string) =>
+    req('POST', '/admin/companies/deletion-requests/' + reqId + '/reject', { comment: comment || null }),
+  cancelCompanyDeletion: (reqId: string) =>
+    req('POST', '/admin/companies/deletion-requests/' + reqId + '/cancel'),
 
   // Admin — apps registry
   listApps: () => req<App[]>('GET', '/admin/apps'),
