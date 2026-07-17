@@ -135,6 +135,10 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
         </div>
       </div>
 
+      <footer className="shrink-0 border-t border-slate-800 bg-slate-900 py-2 text-center text-[11px] font-semibold text-slate-500">
+        True Eco Digital Platform
+      </footer>
+
       <PersonalSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
