@@ -74,6 +74,12 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
           : `Remove ${selectedUser.fullName} from ${c.name}?\n\nThey have no app access here — this only removes the company membership.`
       if (!window.confirm(msg)) return
     }
+    // Ticking a company IS working in that company — scope Tier 3 to it right
+    // away (synchronously), so the App Access panel appears the moment the box
+    // is clicked instead of after the membership round-trips. Previously the
+    // company was only selected AFTER the network calls, and only for a user
+    // with zero apps — for anyone else Tier 3 never scoped at all.
+    selectCompany(c)
     setBusyId(c.id)
     // One app failing must not abort the rest or hide what did land — collect
     // per-app failures, finish the loop, and ALWAYS reload so the checkbox
@@ -115,8 +121,8 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
       if (failures.length > 0) {
         toast(`Some apps failed — ${failures.join(' · ')}`, 'bad')
       } else if (next && ents.length === 0) {
-        // Brand-new user: membership saved — point the admin at Tier 3 for the first grant.
-        selectCompany(c)
+        // Brand-new user: membership saved — point the admin at Tier 3 for the
+        // first grant (the company is already selected, from tick time).
         toast(`${selectedUser.fullName} is now a member of ${c.name} — grant their app access in Tier 3 →`, 'ok')
       } else {
         toast(
