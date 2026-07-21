@@ -77,9 +77,9 @@ export function App() {
       if (m.status === 'pending') { setPhase('awaiting'); return }
       // SSO deep-link: an app sent us here to sign in (?return=<deep-link>). Already authed →
       // bounce straight back to the linked document instead of dead-ending on the launcher.
-      // (Legacy app.js init() at :115-116.) claimBounce() breaks loops: if that same app keeps
-      // sending us back here (it 401s no matter what we do), we stop bouncing and show the
-      // launcher, and drop the ?return so the launcher stays put on reload.
+      // (Legacy app.js init() at :115-116.) claimBounce() breaks the flicker: if we're handed the
+      // identical deep-link we just bounced to seconds ago (the app 401s no matter what we do), we
+      // stop bouncing and show the launcher, and drop the ?return so the launcher stays put on reload.
       if (await settleReturn()) return
       setPhase('app')
     })()
@@ -90,8 +90,8 @@ export function App() {
     if (!m) { setPhase('login'); return }
     if (m.status === 'pending') { setPhase('awaiting'); return }
     // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
-    // if an app handed us a ?return deep-link, go there rather than the launcher — same loop
-    // guard, so a fresh login always gets its first bounce but a bounce-back can't loop.
+    // if an app handed us a ?return deep-link, go there rather than the launcher — same flicker
+    // guard, so a fresh login always gets its first bounce but an instant bounce-back can't flicker.
     if (await settleReturn()) return
     setPhase('app')
   }
