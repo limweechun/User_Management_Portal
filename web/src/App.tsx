@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { iam, canUsePortal } from './lib/iam'
-import { resolveReturnTarget, claimBounce, clearBounceGuard } from './lib/returnTo'
+import { resolveReturnTarget, claimBounce, clearBounceGuard, hasReturnParam } from './lib/returnTo'
 import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
@@ -14,6 +14,30 @@ type Phase = 'booting' | 'login' | 'reset' | 'awaiting' | 'app'
 // as the ?logout and ?verify paths in App() do, and the landing becomes idempotent.
 function dropReturnParam(): void {
   try { history.replaceState(null, '', location.pathname) } catch { /* history unavailable */ }
+}
+
+// The SSO deep-link decision, shared by the boot path and the login-success path.
+// Returns true when we have navigated away (the caller must stop); false = land on the launcher.
+//
+// The three outcomes are deliberately distinct. resolveReturnTarget() returns null both for "no
+// deep-link at all" and for "a deep-link was present but is unusable" — and the second includes a
+// TRANSIENT case: a valid, registered cross-origin target rejected only because iam.listApps() threw.
+// Treating that as a plain visit was a hole in the guard: one flaky catalog fetch mid-loop called
+// clearBounceGuard() (wiping the attempt count, so the next hops were allowed again) and left ?return
+// in the address bar (so a reload re-fired the bounce with a zeroed counter). So we branch on whether
+// a return param was PRESENT, not on whether it resolved.
+async function settleReturn(): Promise<boolean> {
+  const present = hasReturnParam()
+  const ret = await resolveReturnTarget()
+  if (ret) {
+    if (claimBounce(ret)) { location.replace(ret); return true }
+    dropReturnParam() // refused → make the rescue landing idempotent (see dropReturnParam)
+  } else if (present) {
+    dropReturnParam() // present but unusable → same idempotent landing, and the count STAYS
+  } else {
+    clearBounceGuard() // plain visit, no deep-link → deliberate landing, forget any past bounce
+  }
+  return false
 }
 
 // Boot sequence mirrors the legacy app.js init(): handle ?logout / ?reset first, then resolve
@@ -56,13 +80,7 @@ export function App() {
       // (Legacy app.js init() at :115-116.) claimBounce() breaks loops: if that same app keeps
       // sending us back here (it 401s no matter what we do), we stop bouncing and show the
       // launcher, and drop the ?return so the launcher stays put on reload.
-      const ret = await resolveReturnTarget()
-      if (ret) {
-        if (claimBounce(ret)) { location.replace(ret); return }
-        dropReturnParam() // refused → make the rescue landing idempotent (see dropReturnParam)
-      } else {
-        clearBounceGuard() // plain visit, no deep-link → deliberate landing, forget any past bounce
-      }
+      if (await settleReturn()) return
       setPhase('app')
     })()
   }, [refresh])
@@ -74,13 +92,7 @@ export function App() {
     // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
     // if an app handed us a ?return deep-link, go there rather than the launcher — same loop
     // guard, so a fresh login always gets its first bounce but a bounce-back can't loop.
-    const ret = await resolveReturnTarget()
-    if (ret) {
-      if (claimBounce(ret)) { location.replace(ret); return }
-      dropReturnParam()
-    } else {
-      clearBounceGuard()
-    }
+    if (await settleReturn()) return
     setPhase('app')
   }
   const out = () => signOut().then(() => setPhase('login'))
