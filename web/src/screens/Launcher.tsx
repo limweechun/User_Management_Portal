@@ -4,6 +4,7 @@ import { iam, canUsePortal, isSuperAdmin, type App, type Branding } from '../lib
 import { useSession } from '../context/SessionContext'
 import { initials } from '../lib/util'
 import { iconByName } from '../lib/appIcons'
+import { clearBounceGuard } from '../lib/returnTo'
 import { PersonalSettings } from '../components/PersonalSettings'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
@@ -108,7 +109,9 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                   )
                 }
                 return (
-                  <a key={a.id} href={hrefFor(a)} className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all duration-200 hover:border-slate-700 hover:shadow-sm">
+                  // Opening an app from here is a deliberate launch: drop the one-shot ?return
+                  // bounce guard so a legitimate deep-link bounce is allowed again straight away.
+                  <a key={a.id} href={hrefFor(a)} onClick={clearBounceGuard} className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all duration-200 hover:border-slate-700 hover:shadow-sm">
                     <Tile
                       name={a.name}
                       icon={a.icon}

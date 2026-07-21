@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { iam, canUsePortal } from './lib/iam'
-import { resolveReturnTarget } from './lib/returnTo'
+import { resolveReturnTarget, claimBounce, clearBounceGuard } from './lib/returnTo'
 import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
@@ -44,9 +44,14 @@ export function App() {
       if (m.status === 'pending') { setPhase('awaiting'); return }
       // SSO deep-link: an app sent us here to sign in (?return=<deep-link>). Already authed →
       // bounce straight back to the linked document instead of dead-ending on the launcher.
-      // (Legacy app.js init() at :115-116.)
+      // (Legacy app.js init() at :115-116.) claimBounce() makes it one-shot: if that same app just
+      // sent us back here (it 401s no matter what we do), we stop bouncing and show the launcher.
       const ret = await resolveReturnTarget()
-      if (ret) { location.replace(ret); return }
+      if (ret) {
+        if (claimBounce(ret)) { location.replace(ret); return }
+      } else {
+        clearBounceGuard() // plain visit, no deep-link → deliberate landing, forget any past bounce
+      }
       setPhase('app')
     })()
   }, [refresh])
@@ -56,9 +61,14 @@ export function App() {
     if (!m) { setPhase('login'); return }
     if (m.status === 'pending') { setPhase('awaiting'); return }
     // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
-    // if an app handed us a ?return deep-link, go there rather than the launcher.
+    // if an app handed us a ?return deep-link, go there rather than the launcher — same one-shot
+    // guard, so a fresh login always gets its first bounce but a bounce-back can't loop.
     const ret = await resolveReturnTarget()
-    if (ret) { location.replace(ret); return }
+    if (ret) {
+      if (claimBounce(ret)) { location.replace(ret); return }
+    } else {
+      clearBounceGuard()
+    }
     setPhase('app')
   }
   const out = () => signOut().then(() => setPhase('login'))

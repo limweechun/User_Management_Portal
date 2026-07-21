@@ -37,6 +37,54 @@ function allowedOrigins(apps: App[]): Set<string> {
   return set
 }
 
+// ---------------------------------------------------------------------------
+// One-shot bounce guard (loop breaker)
+//
+// The bounce is only safe if it can't repeat: an app that sends us here on an unrecoverable 401
+// (e.g. Procurement's redirectToPortal()) will 401 again the instant we bounce back, and without a
+// guard that closes a two-page infinite loop — the browser flickers between the app and the portal
+// with no way out.
+//
+// So: remember the target we just bounced to and refuse to bounce to the SAME target again inside a
+// short window. The refusal falls through to the launcher, which is always a safe landing page.
+// Kept in sessionStorage so it dies with the tab, and cleared whenever the user lands on the portal
+// deliberately (no ?return) or clicks an app on the launcher — a real navigation is never blocked.
+const BOUNCE_KEY = 'portal.returnBounce'
+const BOUNCE_WINDOW_MS = 15_000
+
+type BounceRecord = { href: string; ts: number }
+
+function readBounce(): BounceRecord | null {
+  try {
+    const raw = sessionStorage.getItem(BOUNCE_KEY)
+    if (!raw) return null
+    const rec = JSON.parse(raw) as BounceRecord
+    if (typeof rec?.href !== 'string' || typeof rec?.ts !== 'number') return null
+    return rec
+  } catch { return null }
+}
+
+// Forget the last bounce, so the very next attempt to the same target is allowed again. Call this on
+// any deliberate navigation: arriving at the portal without a ?return, or clicking an app tile.
+export function clearBounceGuard(): void {
+  try { sessionStorage.removeItem(BOUNCE_KEY) } catch { /* storage unavailable */ }
+}
+
+// Claim the right to bounce to `target`. True = go ahead (and the attempt is recorded); false = we
+// already sent the user here moments ago and they came straight back, so this is a loop — the
+// caller must fall through to the launcher instead. A first attempt always succeeds, including
+// right after a genuine fresh login.
+export function claimBounce(target: string): boolean {
+  const prev = readBounce()
+  // Same target, still inside the window → the bounce round-tripped: refuse. The record is left in
+  // place (not refreshed) so repeated reloads of this URL stay refused until the window elapses.
+  if (prev && prev.href === target && Date.now() - prev.ts < BOUNCE_WINDOW_MS) return false
+  try {
+    sessionStorage.setItem(BOUNCE_KEY, JSON.stringify({ href: target, ts: Date.now() } satisfies BounceRecord))
+  } catch { /* storage unavailable — can't guard, but don't break the deep-link */ }
+  return true
+}
+
 // Resolve + validate the ?return target against the app-URL allowlist. Returns the safe absolute
 // href to redirect to, or null when there's no return param or it fails a guard. Only called once
 // the user is authenticated, so listApps() (same endpoint the launcher uses) is available.
