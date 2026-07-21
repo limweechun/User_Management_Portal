@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { iam, canUsePortal } from './lib/iam'
+import { resolveReturnTarget } from './lib/returnTo'
 import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
@@ -40,13 +41,25 @@ export function App() {
       if (rt) { setResetToken(rt); setPhase('reset'); return }
       const m = await refresh()
       if (!m) { setPhase('login'); return }
-      setPhase(m.status === 'pending' ? 'awaiting' : 'app')
+      if (m.status === 'pending') { setPhase('awaiting'); return }
+      // SSO deep-link: an app sent us here to sign in (?return=<deep-link>). Already authed →
+      // bounce straight back to the linked document instead of dead-ending on the launcher.
+      // (Legacy app.js init() at :115-116.)
+      const ret = await resolveReturnTarget()
+      if (ret) { location.replace(ret); return }
+      setPhase('app')
     })()
   }, [refresh])
 
   const toApp = async () => {
     const m = await refresh()
-    setPhase(!m ? 'login' : m.status === 'pending' ? 'awaiting' : 'app')
+    if (!m) { setPhase('login'); return }
+    if (m.status === 'pending') { setPhase('awaiting'); return }
+    // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
+    // if an app handed us a ?return deep-link, go there rather than the launcher.
+    const ret = await resolveReturnTarget()
+    if (ret) { location.replace(ret); return }
+    setPhase('app')
   }
   const out = () => signOut().then(() => setPhase('login'))
 
