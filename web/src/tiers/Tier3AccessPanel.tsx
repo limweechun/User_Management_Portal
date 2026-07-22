@@ -149,7 +149,7 @@ export function Tier3AccessPanel({
                 const granted = acc !== 'none'
                 const canDelete = !!ent?.canApproveDeletions
                 return (
-                  <div key={app.id} className={'rounded-xl border p-3 transition-all duration-200 ' + (granted ? 'border-slate-700 bg-slate-800/40' : 'border-slate-800 bg-slate-900/40')}>
+                  <div key={app.id} className={'rounded-xl border p-3 transition-all duration-200 ' + (granted ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/40')}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-700/60 text-[10px] font-semibold text-slate-300">{initials(app.shortName || app.name)}</div>
