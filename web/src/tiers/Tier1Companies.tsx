@@ -38,7 +38,9 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
   }, [])
   useEffect(() => { void load() }, [load])
 
-  const filtered = companies.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
+  const filtered = companies
+    .filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
   const domain = me?.user.email?.split('@')[1]
 
   const openAdd = () => { setDrawerCompany(null); setDrawerOpen(true) }
