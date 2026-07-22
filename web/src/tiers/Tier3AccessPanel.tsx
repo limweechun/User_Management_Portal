@@ -154,7 +154,7 @@ export function Tier3AccessPanel({
                       <div className="flex min-w-0 items-center gap-2.5">
                         <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-700/60 text-[10px] font-semibold text-slate-300">{initials(app.shortName || app.name)}</div>
                         <div className="min-w-0">
-                          <div className="truncate text-xs font-medium text-slate-200">{app.name}</div>
+                          <div className={'truncate text-xs font-medium ' + (granted ? 'text-emerald-200' : 'text-slate-200')}>{app.name}</div>
                           <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App admin — all companies' : acc === 'companyadmin' ? 'App admin — ' + company.name : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
                         </div>
                       </div>
