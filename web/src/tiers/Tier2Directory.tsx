@@ -8,7 +8,6 @@ import { useSortable } from '../hooks/useSortable'
 import { SortableHeader } from '../components/SortableHeader'
 import { StyledSelect } from '../components/StyledSelect'
 import { TierCard } from '../components/TierCard'
-import { requireSuperAdmin } from '../lib/securityGate'
 import { fmtDate, roleLabel, GLOBAL_ROLE_OPTIONS } from '../lib/util'
 
 // Stable accessor map for the universal sort hook (key → value extractor).
@@ -22,8 +21,11 @@ const ACCESSORS: Record<string, (u: AdminUser) => unknown> = {
 
 // Tier 1 — User Directory: EVERY login on the platform (user-first flow — no company
 // filter; scope comes later in Tier 2). Selecting a row drives Tiers 2-3. The Global
-// Role is set inline here (Super-Admin-only), so onboarding a fresh signup is:
+// Role is set inline here, so onboarding a fresh signup is:
 // pick the user → set their role → pick a company → grant per-app access.
+// Global-role authority is graduated (mirrors the server): a Super Admin has the full
+// ladder; a Portal Admin may only set New User ↔ Ordinary User and can never assign
+// portal authority (Portal Admin / Super Admin) nor change a target who already holds it.
 export function Tier2Directory({
   users,
   loading,
@@ -37,6 +39,9 @@ export function Tier2Directory({
   const { toast } = useToast()
   const { selectedUser, selectUser } = useWorkspace()
   const superGate = isSuperAdmin(me)
+  // A Portal Admin (platformRole 'admin', not 'superadmin'): may set the global role but
+  // only within the New User ↔ Ordinary User band, and never on a portal-authority target.
+  const portalAdminOnly = isPortalAdmin(me) && !superGate
   const [q, setQ] = useState('')
   // Focus the directory on active users by default; switchable to inactive / all.
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
@@ -92,7 +97,17 @@ export function Tier2Directory({
   }, [selectedUser, statusFilter])
 
   const setRole = async (u: AdminUser, role: string) => {
-    if (!requireSuperAdmin(me, toast)) return
+    // Client-side mirror of the server rule (re-enforced there regardless). A Super Admin
+    // has the full ladder. A Portal Admin may only set New User / Ordinary User, and only
+    // on a target who is not already an Admin or Super Admin.
+    if (!superGate) {
+      const targetHasAuthority = u.platformRole === 'admin' || u.platformRole === 'superadmin'
+      const inBand = role === 'NEW_USER' || role === 'ORDINARY_USER'
+      if (!portalAdminOnly || targetHasAuthority || !inBand) {
+        toast('Only a Super Admin can assign portal authority or change an Admin / Super Admin.', 'bad')
+        return
+      }
+    }
     setSavingRole(u.id)
     try {
       await iam.setGlobalRole(u.id, role as GlobalRole)
@@ -196,6 +211,19 @@ export function Tier2Directory({
               sorted.map((u) => {
                 const sel = selectedUser?.id === u.id
                 const legacyRole = !GLOBAL_ROLE_OPTIONS.some((o) => o.value === u.globalRole)
+                // Per-row global-role authority for the SIGNED-IN actor (mirrors the server):
+                // a Super Admin gets the whole ladder; a Portal Admin only the New User ↔
+                // Ordinary User band, and never a target who already holds portal authority.
+                const targetHasAuthority = u.platformRole === 'admin' || u.platformRole === 'superadmin'
+                const roleOptions = superGate
+                  ? GLOBAL_ROLE_OPTIONS
+                  : GLOBAL_ROLE_OPTIONS.filter((o) => o.value === 'NEW_USER' || o.value === 'ORDINARY_USER')
+                const canEditRole = superGate || (portalAdminOnly && !targetHasAuthority)
+                const lockedByAuthority = portalAdminOnly && targetHasAuthority
+                // Keep the dropdown showing the user's real current role even when it falls
+                // outside the actor's offered options (a retired role, or an Admin / Super
+                // Admin seen by a Portal Admin) instead of snapping to the first option.
+                const showCurrentOutOfBand = !roleOptions.some((o) => o.value === u.globalRole)
                 return (
                   <tr
                     key={u.id}
@@ -210,21 +238,26 @@ export function Tier2Directory({
                       </div>
                       <div className="truncate text-[10px] text-slate-500">{u.email}</div>
                     </td>
-                    {/* Inline role selector — Super-Admin-only; stopPropagation so opening the
+                    {/* Inline role selector — options + edit rights depend on the actor's own
+                        authority (see per-row derivation above). stopPropagation so opening the
                         dropdown doesn't also fire the row's select-user click. */}
                     <td className="border-b border-slate-800 px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                      <StyledSelect
-                        tone="dark"
-                        value={String(u.globalRole)}
-                        onChange={(v) => setRole(u, v)}
-                        disabled={!superGate || savingRole === u.id}
-                        className="w-36"
-                      >
-                        {GLOBAL_ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        {/* Retired roles (e.g. Director) still display for existing holders,
-                            but can only be changed AWAY from — never re-assigned. */}
-                        {legacyRole ? <option value={String(u.globalRole)} disabled>{roleLabel(u.globalRole)} (retired)</option> : null}
-                      </StyledSelect>
+                      <div title={lockedByAuthority ? 'Only a Super Admin can change this' : undefined}>
+                        <StyledSelect
+                          tone="dark"
+                          value={String(u.globalRole)}
+                          onChange={(v) => setRole(u, v)}
+                          disabled={!canEditRole || savingRole === u.id}
+                          className="w-36"
+                        >
+                          {roleOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          {/* Current role shown as a disabled option when it's outside the actor's
+                              offered range — a retired role (e.g. Director), or an Admin / Super
+                              Admin viewed by a Portal Admin — so the dropdown still reads true. */}
+                          {showCurrentOutOfBand ? <option value={String(u.globalRole)} disabled>{roleLabel(u.globalRole)}{legacyRole ? ' (retired)' : ''}</option> : null}
+                        </StyledSelect>
+                        {lockedByAuthority ? <div className="mt-1 text-[9px] leading-tight text-slate-500">Only a Super Admin can change this</div> : null}
+                      </div>
                     </td>
                     <td className="border-b border-slate-800 px-3 py-2.5"><StatusText status={u.status} emailVerified={u.emailVerified} /></td>
                     <td className="border-b border-slate-800 px-3 py-2.5 text-[11px] text-slate-400">{fmtDate(u.createdAt)}</td>
