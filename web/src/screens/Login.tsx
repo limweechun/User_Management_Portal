@@ -57,7 +57,7 @@ export function Login({
         await iam.login(email.trim(), password, remember)
         onAuthed()
       } else if (mode === 'register') {
-        await iam.register({ email: email.trim(), fullName: fullName.trim(), password })
+        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), password })
         setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
       } else if (mode === 'forgot') {
@@ -132,9 +132,10 @@ export function Login({
               <Field icon={<User className="h-4 w-4" />}>
                 <input
                   className={inputCls}
+                  style={{ textTransform: 'uppercase' }}
                   placeholder="Full name"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => setFullName(e.target.value.toUpperCase())}
                   required
                   autoComplete="name"
                 />
