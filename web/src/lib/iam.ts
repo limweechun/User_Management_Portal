@@ -38,6 +38,7 @@ export interface CompanyAccess {
   name: string
   role?: string | null
   level: string
+  isAppAdmin?: boolean // per-company app admin (full admin of this app in this company)
   rank?: number
   tier?: number | null
 }
@@ -242,8 +243,9 @@ export const iam = {
     appId: string,
     patch: { entitled?: boolean; isAppAdmin?: boolean; canApproveDeletions?: boolean },
   ) => req('PUT', '/admin/users/' + userId + '/entitlements/' + appId, patch),
-  setCompanyAccess: (userId: string, appId: string, companyId: string, role: string) =>
-    req('PUT', '/admin/users/' + userId + '/apps/' + appId + '/companies/' + companyId, { role }),
+  setCompanyAccess: (userId: string, appId: string, companyId: string, role: string, isAppAdmin?: boolean) =>
+    req('PUT', '/admin/users/' + userId + '/apps/' + appId + '/companies/' + companyId,
+      isAppAdmin === undefined ? { role } : { role, isAppAdmin }),
   removeCompanyAccess: (userId: string, appId: string, companyId: string) =>
     req('DELETE', '/admin/users/' + userId + '/apps/' + appId + '/companies/' + companyId),
 

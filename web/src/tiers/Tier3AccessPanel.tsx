@@ -10,11 +10,15 @@ import { TierCard } from '../components/TierCard'
 import { requireSuperAdmin } from '../lib/securityGate'
 import { initials } from '../lib/util'
 
-type Access = 'none' | 'user' | 'appadmin'
+type Access = 'none' | 'user' | 'companyadmin' | 'appadmin'
 
 // Tier 3 — App Access (right column). For the user picked in Tier 1, within the company
-// picked in Tier 2: one dropdown per app — No Access / Ordinary User / App Admin — plus
-// deletion-approval rights. Global role and account status live in Tier 1; finer role
+// picked in Tier 2: one dropdown per app — No Access / Ordinary User / App Admin (this
+// company) / App Admin — all companies — plus deletion-approval rights. "App Admin (this
+// company)" is a PER-COMPANY admin (stored on the company access row); "App Admin — all
+// companies" is the app-wide super-grant (stored on the entitlement). A user can therefore
+// be app admin in one company and ordinary/none in another. Global role and account status
+// live in Tier 1; finer role
 // titles are assigned INSIDE each app by its admins. Super-Admin-only actions are gated
 // client-side (and re-enforced server-side). Every control writes immediately.
 export function Tier3AccessPanel({
@@ -55,38 +59,57 @@ export function Tier3AccessPanel({
   const accessFor = (appId: string): Access => {
     const ent = user?.entitlements.find((e) => e.appId === appId)
     if (!ent) return 'none'
-    if (ent.isAppAdmin) return 'appadmin'
-    return ent.companies.some((c) => c.companyId === company?.id) ? 'user' : 'none'
+    if (ent.isAppAdmin) return 'appadmin' // app-wide super-grant dominates every company
+    const cc = ent.companies.find((c) => c.companyId === company?.id)
+    if (cc?.isAppAdmin) return 'companyadmin' // per-company admin of the Tier-2 company
+    return cc ? 'user' : 'none'
   }
 
   const setAccess = (app: App, value: Access) => {
     if (!user || !company) return
     const ent = user.entitlements.find((e) => e.appId === app.id)
-    // Granting App Admin OR demoting away from it crosses the app-wide admin boundary, which is
-    // Super-Admin-only on the server — gate it client-side either way for a friendly toast.
-    const crossesAdmin = value === 'appadmin' || !!ent?.isAppAdmin
+    const wasAppAdmin = !!ent?.isAppAdmin
+    const wasCompanyAdmin = !!ent?.companies.find((c) => c.companyId === company.id)?.isAppAdmin
+    // Any move INTO or OUT OF an admin tier (per-company OR app-wide) is Super-Admin-only on
+    // the server — gate it client-side either way for a friendly toast.
+    const crossesAdmin = value === 'appadmin' || value === 'companyadmin' || wasAppAdmin || wasCompanyAdmin
     if (crossesAdmin && !requireSuperAdmin(me, toast)) return
+    const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
     run('Updated ' + (app.shortName || app.name), async () => {
       if (value === 'none') {
-        // App Admin is a single app-wide flag (no company rows), so "No Access" on an app admin
-        // must fully revoke the entitlement (the server cascades all access) — otherwise the
-        // orphaned entitlement persists and the dropdown reverts to App Admin.
-        if (ent?.isAppAdmin) {
+        // App-wide admin has no per-company row, so revoke the whole entitlement (server cascades
+        // all access). Otherwise drop this company's row — its per-company admin flag dies with it —
+        // and if it was the user's last company for this app, drop the now-empty entitlement too.
+        if (wasAppAdmin) {
           await iam.setEntitlement(user.id, app.id, { entitled: false })
         } else {
           await iam.removeCompanyAccess(user.id, app.id, company.id)
           if (ent && ent.companies.length <= 1) await iam.setEntitlement(user.id, app.id, { entitled: false })
         }
-      } else {
-        // Grants land as Ordinary User (or keep an already-assigned title) — refined
-        // role titles are managed inside each app's own App Roles screen, not here.
-        // Only send the isAppAdmin flag when the value actually crosses the admin
-        // boundary: the server treats ANY boolean as flag-setting (Super-Admin-only),
-        // so including `isAppAdmin: false` on a plain grant 403s a Portal Admin.
-        const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
-        await iam.setEntitlement(user.id, app.id, crossesAdmin ? { entitled: true, isAppAdmin: value === 'appadmin' } : { entitled: true })
-        await iam.setCompanyAccess(user.id, app.id, company.id, curRole)
+        return
       }
+      if (value === 'appadmin') {
+        // App-wide administrator across every company (entitlement flag). Also clear THIS
+        // company's per-company flag if it had one (promoting from companyadmin) — otherwise
+        // the stale row flag survives a later app-wide demotion and resurfaces as an
+        // unintended per-company admin. Super-gated already, so sending the boolean is safe.
+        await iam.setEntitlement(user.id, app.id, { entitled: true, isAppAdmin: true })
+        await iam.setCompanyAccess(user.id, app.id, company.id, curRole, wasCompanyAdmin ? false : undefined)
+        return
+      }
+      if (value === 'companyadmin') {
+        // Admin of THIS company only. Clear any app-wide flag, set the per-company flag on the row.
+        await iam.setEntitlement(user.id, app.id, wasAppAdmin ? { entitled: true, isAppAdmin: false } : { entitled: true })
+        await iam.setCompanyAccess(user.id, app.id, company.id, curRole, true)
+        return
+      }
+      // value === 'user' — ordinary member of this company. Refined role titles are managed inside
+      // each app's own App Roles screen, not here. Clear the app-wide flag if demoting from it, and
+      // clear the per-company flag if demoting from company-admin (send `false` only then — the
+      // server treats any boolean as flag-setting/Super-only, so a plain grant omits it entirely,
+      // leaving ordinary grants doable by a Portal Admin).
+      await iam.setEntitlement(user.id, app.id, wasAppAdmin ? { entitled: true, isAppAdmin: false } : { entitled: true })
+      await iam.setCompanyAccess(user.id, app.id, company.id, curRole, wasCompanyAdmin ? false : undefined)
     })
   }
 
@@ -132,13 +155,14 @@ export function Tier3AccessPanel({
                         <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-700/60 text-[10px] font-semibold text-slate-300">{initials(app.shortName || app.name)}</div>
                         <div className="min-w-0">
                           <div className="truncate text-xs font-medium text-slate-200">{app.name}</div>
-                          <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App-wide administrator' : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
+                          <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App admin — all companies' : acc === 'companyadmin' ? 'App admin — ' + company.name : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
                         </div>
                       </div>
-                      <StyledSelect tone="dark" value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={acc === 'appadmin' && !superGate} className="w-36 shrink-0">
+                      <StyledSelect tone="dark" value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={(acc === 'appadmin' || acc === 'companyadmin') && !superGate} className="w-44 shrink-0">
                         <option value="none">No Access</option>
                         <option value="user">Ordinary User</option>
-                        {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin</option> : null}
+                        {superGate || acc === 'companyadmin' ? <option value="companyadmin">App Admin (this company)</option> : null}
+                        {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin — all companies</option> : null}
                       </StyledSelect>
                     </div>
                     {granted ? (
