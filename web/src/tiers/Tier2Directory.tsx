@@ -47,6 +47,24 @@ export function Tier2Directory({
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
   const [savingRole, setSavingRole] = useState<string | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
+  const [verifyBusy, setVerifyBusy] = useState(false)
+
+  // Verify a user's email ON THEIR BEHALF — for people stuck at the sign-in gate who never
+  // clicked the emailed verification link (typo, spam folder, SMTP down). Portal-admin action.
+  const verifyEmail = async (u: AdminUser) => {
+    setVerifyBusy(true)
+    try {
+      await iam.verifyUserEmail(u.id)
+      const list = await reload()
+      const fresh = list.find((x) => x.id === u.id)
+      if (fresh) selectUser(fresh)
+      toast('Email marked verified — they can sign in now', 'ok')
+    } catch (e: any) {
+      toast(e?.message || 'Could not verify email', 'bad')
+    } finally {
+      setVerifyBusy(false)
+    }
+  }
 
   // Account status lives HERE in Tier 1 (it's a global, per-login property — not
   // scoped to a company or app). Portal-admin-gated, never on your own account,
@@ -186,6 +204,26 @@ export function Tier2Directory({
                   <div className="text-[11px] text-slate-300">{su.status === 'inactive' ? fmtDate(su.deactivatedAt) : '—'}</div>
                 </div>
               </div>
+              {/* Email verification — sign-in is blocked until it's done. When a user is stuck
+                  (never clicked the emailed link), a portal admin can clear it for them here. */}
+              {su.emailVerified === false ? (
+                <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-slate-700/60 pt-2.5">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500">Email verification</div>
+                    <div className="text-[11px] font-medium text-amber-400">Not verified — can't sign in yet</div>
+                  </div>
+                  {isPortalAdmin(me) ? (
+                    <button
+                      onClick={() => verifyEmail(su)}
+                      disabled={verifyBusy}
+                      title="Mark this email verified on their behalf so they can sign in"
+                      className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-all duration-200 hover:bg-emerald-500/20 disabled:opacity-50"
+                    >
+                      Verify email
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
               {isSelf ? <div className="mt-2 text-[10px] text-slate-500">You can't change your own account status here.</div> : null}
             </div>
           )

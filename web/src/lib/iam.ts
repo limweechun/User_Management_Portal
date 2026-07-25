@@ -232,6 +232,8 @@ export const iam = {
   updateUser: (id: string, patch: { fullName?: string; email?: string; emailVerified?: boolean }) =>
     req('PATCH', '/admin/users/' + id, patch),
   resetUserPassword: (id: string, password: string) => req('POST', '/admin/users/' + id + '/reset-password', { password }),
+  // Mark a stuck user's email verified on their behalf (they never clicked the emailed link).
+  verifyUserEmail: (id: string) => req('POST', '/admin/users/' + id + '/verify-email'),
   approveAccount: (id: string) => req('POST', '/admin/users/' + id + '/approve'),
   setUserStatus: (id: string, status: 'active' | 'inactive') =>
     req('POST', '/admin/users/' + id + '/' + (status === 'active' ? 'activate' : 'deactivate')),
