@@ -116,13 +116,12 @@ export function Tier2Directory({
 
   const setRole = async (u: AdminUser, role: string) => {
     // Client-side mirror of the server rule (re-enforced there regardless). A Super Admin
-    // has the full ladder. A Portal Admin may only set New User / Ordinary User, and only
-    // on a target who is not already an Admin or Super Admin.
+    // has the full ladder. A Portal Admin may assign any role EXCEPT Super Admin, and can
+    // never change a target who IS a Super Admin.
     if (!superGate) {
-      const targetHasAuthority = u.platformRole === 'admin' || u.platformRole === 'superadmin'
-      const inBand = role === 'NEW_USER' || role === 'ORDINARY_USER'
-      if (!portalAdminOnly || targetHasAuthority || !inBand) {
-        toast('Only a Super Admin can assign portal authority or change an Admin / Super Admin.', 'bad')
+      const targetIsSuper = u.platformRole === 'superadmin'
+      if (!portalAdminOnly || targetIsSuper || role === 'SUPERADMIN') {
+        toast('Only a Super Admin can assign the Super Admin role or change a Super Admin.', 'bad')
         return
       }
     }
@@ -250,14 +249,14 @@ export function Tier2Directory({
                 const sel = selectedUser?.id === u.id
                 const legacyRole = !GLOBAL_ROLE_OPTIONS.some((o) => o.value === u.globalRole)
                 // Per-row global-role authority for the SIGNED-IN actor (mirrors the server):
-                // a Super Admin gets the whole ladder; a Portal Admin only the New User ↔
-                // Ordinary User band, and never a target who already holds portal authority.
-                const targetHasAuthority = u.platformRole === 'admin' || u.platformRole === 'superadmin'
+                // a Super Admin gets the whole ladder; a Portal Admin gets every role EXCEPT
+                // Super Admin, and can never touch a target who IS a Super Admin.
+                const targetIsSuper = u.platformRole === 'superadmin'
                 const roleOptions = superGate
                   ? GLOBAL_ROLE_OPTIONS
-                  : GLOBAL_ROLE_OPTIONS.filter((o) => o.value === 'NEW_USER' || o.value === 'ORDINARY_USER')
-                const canEditRole = superGate || (portalAdminOnly && !targetHasAuthority)
-                const lockedByAuthority = portalAdminOnly && targetHasAuthority
+                  : GLOBAL_ROLE_OPTIONS.filter((o) => o.value !== 'SUPERADMIN')
+                const canEditRole = superGate || (portalAdminOnly && !targetIsSuper)
+                const lockedByAuthority = portalAdminOnly && targetIsSuper
                 // Keep the dropdown showing the user's real current role even when it falls
                 // outside the actor's offered options (a retired role, or an Admin / Super
                 // Admin seen by a Portal Admin) instead of snapping to the first option.
