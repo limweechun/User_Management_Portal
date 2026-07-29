@@ -127,7 +127,7 @@ export function Tier3AccessPanel({
   }
 
   return (
-    {/* Kept narrow so Tier 1 (flex-1) gets the width — the directory is the busiest panel. */}
+    // Kept narrow so Tier 1 (flex-1) gets the width — the directory is the busiest panel.
     <TierCard icon={<Shield className="h-3.5 w-3.5" />} label="Tier 3: App Access" className="w-[500px] shrink-0">
       {!user || !company ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center text-xs text-slate-500">
