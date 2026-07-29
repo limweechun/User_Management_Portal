@@ -48,6 +48,7 @@ export interface MeUser {
   email: string
   userCode?: string | null
   fullName: string
+  displayName?: string | null // preferred short name; self- and admin-editable
   phone?: string | null
   status: UserStatus
   emailVerified: boolean
@@ -201,7 +202,7 @@ export interface Branding {
 // ---- API surface ----
 export const iam = {
   // Auth
-  register: (b: { email: string; fullName: string; password: string }) => req('POST', '/auth/register', b),
+  register: (b: { email: string; fullName: string; displayName?: string; password: string }) => req('POST', '/auth/register', b),
   verifyEmail: (token: string) => req('POST', '/auth/verify-email', { token }),
   login: (email: string, password: string, rememberMe?: boolean) =>
     req('POST', '/auth/login', { email, password, rememberMe: !!rememberMe }),

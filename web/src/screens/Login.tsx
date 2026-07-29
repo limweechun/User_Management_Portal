@@ -28,6 +28,7 @@ export function Login({
   const [branding, setBranding] = useState<Branding>({})
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [remember, setRemember] = useState(true)
@@ -57,7 +58,7 @@ export function Login({
         await iam.login(email.trim(), password, remember)
         onAuthed()
       } else if (mode === 'register') {
-        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), password })
+        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password })
         setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
       } else if (mode === 'forgot') {
@@ -129,17 +130,28 @@ export function Login({
 
           <div className="mt-5 space-y-3">
             {mode === 'register' ? (
-              <Field icon={<User className="h-4 w-4" />}>
-                <input
-                  className={inputCls}
-                  style={{ textTransform: 'uppercase' }}
-                  placeholder="Full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value.toUpperCase())}
-                  required
-                  autoComplete="name"
-                />
-              </Field>
+              <>
+                <Field icon={<User className="h-4 w-4" />}>
+                  <input
+                    className={inputCls}
+                    style={{ textTransform: 'uppercase' }}
+                    placeholder="Full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value.toUpperCase())}
+                    required
+                    autoComplete="name"
+                  />
+                </Field>
+                <Field icon={<User className="h-4 w-4" />}>
+                  <input
+                    className={inputCls}
+                    placeholder="Display name (optional — the short name shown in apps)"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    autoComplete="nickname"
+                  />
+                </Field>
+              </>
             ) : null}
 
             {mode !== 'reset' ? (

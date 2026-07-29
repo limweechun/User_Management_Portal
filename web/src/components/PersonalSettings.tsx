@@ -14,6 +14,7 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
   const { me, refresh } = useSession()
   const { toast } = useToast()
   const [fullName, setFullName] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [phone, setPhone] = useState('')
   const [notifyInApp, setNotifyInApp] = useState(true)
   const [notifyEmail, setNotifyEmail] = useState(true)
@@ -24,6 +25,7 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
   useEffect(() => {
     if (open && me) {
       setFullName(me.user.fullName || '')
+      setDisplayName(me.user.displayName || '')
       setPhone(me.user.phone || '')
       setNotifyInApp(me.user.notifyInApp ?? true)
       setNotifyEmail(me.user.notifyEmail ?? true)
@@ -36,7 +38,8 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
     e.preventDefault()
     setBusy(true)
     try {
-      await iam.updateProfile({ fullName: fullName.trim(), phone: phone.trim(), notifyInApp, notifyEmail })
+      // displayName always sent — an emptied field CLEARS it (apps fall back to the full name).
+      await iam.updateProfile({ fullName: fullName.trim(), displayName: displayName.trim(), phone: phone.trim(), notifyInApp, notifyEmail })
       await refresh()
       toast('Profile saved', 'ok')
     } catch (err: any) {
@@ -68,6 +71,7 @@ export function PersonalSettings({ open, onClose }: { open: boolean; onClose: ()
         <form onSubmit={saveProfile} className="space-y-3">
           <SectionLabel>Profile</SectionLabel>
           <Field label="Full name"><input className={inp} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>
+          <Field label="Display name"><input className={inp} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Optional — the short name the apps show" /></Field>
           <Field label="Phone"><input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400">In-app notifications</span>
