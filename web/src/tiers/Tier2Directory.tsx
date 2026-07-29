@@ -238,23 +238,26 @@ export function Tier2Directory({
               <div className="mt-2.5 border-t border-slate-700/60 pt-2.5">
                 {nameEdit ? (
                   <div className="space-y-2">
-                    <label className="block">
-                      <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Full name</div>
-                      <input
-                        value={nameEdit.fullName}
-                        onChange={(e) => setNameEdit({ ...nameEdit, fullName: e.target.value })}
-                        className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </label>
-                    <label className="block">
-                      <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Display name</div>
-                      <input
-                        value={nameEdit.displayName}
-                        onChange={(e) => setNameEdit({ ...nameEdit, displayName: e.target.value })}
-                        placeholder="Optional — leave blank to use the full name"
-                        className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
-                      />
-                    </label>
+                    {/* Full name + Display name side by side on one row */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block">
+                        <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Full name</div>
+                        <input
+                          value={nameEdit.fullName}
+                          onChange={(e) => setNameEdit({ ...nameEdit, fullName: e.target.value })}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </label>
+                      <label className="block">
+                        <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Display name</div>
+                        <input
+                          value={nameEdit.displayName}
+                          onChange={(e) => setNameEdit({ ...nameEdit, displayName: e.target.value })}
+                          placeholder="Optional"
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </label>
+                    </div>
                     <div className="flex justify-end gap-2 pt-0.5">
                       <button
                         onClick={() => setNameEdit(null)}
