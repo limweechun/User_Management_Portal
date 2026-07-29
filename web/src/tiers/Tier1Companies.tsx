@@ -149,7 +149,7 @@ export function Tier1Companies({ reload }: { reload: () => Promise<AdminUser[]> 
       icon={<Building2 className="h-3.5 w-3.5" />}
       label="Tier 2: Company Scope"
       trailing={<span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-400">{companies.length}</span>}
-      className="w-[244px] shrink-0"
+      className="w-[340px] shrink-0" /* wide enough for full company names; Tier 1 (flex-1) absorbs the difference */
     >
       <div className="shrink-0 space-y-2.5 px-3 pt-3">
         <button
