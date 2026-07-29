@@ -74,7 +74,12 @@ export function Tier3AccessPanel({
     // the server — gate it client-side either way for a friendly toast.
     const crossesAdmin = value === 'appadmin' || value === 'companyadmin' || wasAppAdmin || wasCompanyAdmin
     if (crossesAdmin && !requireSuperAdmin(me, toast)) return
-    const curRole = ent?.companies.find((c) => c.companyId === company.id)?.role || 'ORDINARY_USER'
+    // Re-send the row's current role so a flag toggle doesn't change it — EXCEPT the
+    // legacy SUPERADMIN stamp, which the server rightly refuses as a per-company role
+    // (it would 400 every change on that company). Those rows fall back to the ADMIN
+    // grant, matching the server-side bootstrap cleanup.
+    const rawRole = ent?.companies.find((c) => c.companyId === company.id)?.role
+    const curRole = !rawRole ? 'ORDINARY_USER' : rawRole === 'SUPERADMIN' ? 'ADMIN' : rawRole
     run('Updated ' + (app.shortName || app.name), async () => {
       if (value === 'none') {
         // App-wide admin has no per-company row, so revoke the whole entitlement (server cascades
