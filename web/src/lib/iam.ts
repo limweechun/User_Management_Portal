@@ -79,6 +79,7 @@ export interface AdminUser {
   email: string
   userCode?: string | null
   fullName: string
+  displayName?: string | null // short/preferred name; portal-admin-editable
   phone?: string | null
   status: UserStatus
   emailVerified: boolean
@@ -229,7 +230,7 @@ export const iam = {
   },
   createUser: (b: { email: string; fullName: string; password: string; phone?: string; globalRole?: GlobalRole }) =>
     req('POST', '/admin/users', b),
-  updateUser: (id: string, patch: { fullName?: string; email?: string; emailVerified?: boolean }) =>
+  updateUser: (id: string, patch: { fullName?: string; displayName?: string; email?: string; emailVerified?: boolean }) =>
     req('PATCH', '/admin/users/' + id, patch),
   resetUserPassword: (id: string, password: string) => req('POST', '/admin/users/' + id + '/reset-password', { password }),
   // Mark a stuck user's email verified on their behalf (they never clicked the emailed link).

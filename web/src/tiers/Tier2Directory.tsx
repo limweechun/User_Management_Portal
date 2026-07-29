@@ -13,6 +13,7 @@ import { fmtDate, roleLabel, GLOBAL_ROLE_OPTIONS } from '../lib/util'
 // Stable accessor map for the universal sort hook (key → value extractor).
 const ACCESSORS: Record<string, (u: AdminUser) => unknown> = {
   user: (u) => u.fullName,
+  display: (u) => u.displayName || '',
   id: (u) => u.userCode || '',
   role: (u) => roleLabel(u.globalRole),
   status: (u) => u.status,
@@ -48,6 +49,32 @@ export function Tier2Directory({
   const [savingRole, setSavingRole] = useState<string | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
   const [verifyBusy, setVerifyBusy] = useState(false)
+  // Inline name editor for the selected user (portal-admin action).
+  const [nameEdit, setNameEdit] = useState<{ fullName: string; displayName: string } | null>(null)
+  const [nameBusy, setNameBusy] = useState(false)
+
+  const saveNames = async (u: AdminUser) => {
+    if (!nameEdit) return
+    const fullName = nameEdit.fullName.trim()
+    if (!fullName) {
+      toast('Name cannot be empty', 'bad')
+      return
+    }
+    setNameBusy(true)
+    try {
+      // displayName always sent — an emptied field CLEARS the display name.
+      await iam.updateUser(u.id, { fullName, displayName: nameEdit.displayName.trim() })
+      const list = await reload()
+      const fresh = list.find((x) => x.id === u.id)
+      if (fresh) selectUser(fresh)
+      setNameEdit(null)
+      toast('Name updated', 'ok')
+    } catch (e: any) {
+      toast(e?.message || 'Could not update name', 'bad')
+    } finally {
+      setNameBusy(false)
+    }
+  }
 
   // Verify a user's email ON THEIR BEHALF — for people stuck at the sign-in gate who never
   // clicked the emailed verification link (typo, spam folder, SMTP down). Portal-admin action.
@@ -101,6 +128,7 @@ export function Tier2Directory({
     return byStatus.filter(
       (u) =>
         u.fullName.toLowerCase().includes(s) ||
+        (u.displayName || '').toLowerCase().includes(s) ||
         u.email.toLowerCase().includes(s) ||
         (u.userCode || '').toLowerCase().includes(s),
     )
@@ -113,6 +141,9 @@ export function Tier2Directory({
   useEffect(() => {
     if (selectedUser && statusFilter === 'active' && selectedUser.status !== 'active') setStatusFilter('all')
   }, [selectedUser, statusFilter])
+
+  // Selecting a different user discards any half-typed name edit.
+  useEffect(() => { setNameEdit(null) }, [selectedUser?.id])
 
   const setRole = async (u: AdminUser, role: string) => {
     // Client-side mirror of the server rule (re-enforced there regardless). A Super Admin
@@ -203,6 +234,63 @@ export function Tier2Directory({
                   <div className="text-[11px] text-slate-300">{su.status === 'inactive' ? fmtDate(su.deactivatedAt) : '—'}</div>
                 </div>
               </div>
+              {/* Name + display name — portal-admin editable (mirrors the server's PATCH /users/:id gate). */}
+              <div className="mt-2.5 border-t border-slate-700/60 pt-2.5">
+                {nameEdit ? (
+                  <div className="space-y-2">
+                    <label className="block">
+                      <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Full name</div>
+                      <input
+                        value={nameEdit.fullName}
+                        onChange={(e) => setNameEdit({ ...nameEdit, fullName: e.target.value })}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
+                      />
+                    </label>
+                    <label className="block">
+                      <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Display name</div>
+                      <input
+                        value={nameEdit.displayName}
+                        onChange={(e) => setNameEdit({ ...nameEdit, displayName: e.target.value })}
+                        placeholder="Optional — leave blank to use the full name"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
+                      />
+                    </label>
+                    <div className="flex justify-end gap-2 pt-0.5">
+                      <button
+                        onClick={() => setNameEdit(null)}
+                        disabled={nameBusy}
+                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => saveNames(su)}
+                        disabled={nameBusy || !nameEdit.fullName.trim()}
+                        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-all duration-200 hover:bg-emerald-500/20 disabled:opacity-50"
+                      >
+                        {nameBusy ? 'Saving…' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500">Name · Display name</div>
+                      <div className="truncate text-[11px] text-slate-300">
+                        {su.fullName} · {su.displayName || <span className="text-slate-500">no display name</span>}
+                      </div>
+                    </div>
+                    {isPortalAdmin(me) ? (
+                      <button
+                        onClick={() => setNameEdit({ fullName: su.fullName, displayName: su.displayName || '' })}
+                        className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
               {/* Email verification — sign-in is blocked until it's done. When a user is stuck
                   (never clicked the emailed link), a portal admin can clear it for them here. */}
               {su.emailVerified === false ? (
@@ -234,6 +322,7 @@ export function Tier2Directory({
             <tr>
               <SortableHeader label="User ID" sortKey="id" sortState={sortState} onSort={toggle} />
               <SortableHeader label="Name" sortKey="user" sortState={sortState} onSort={toggle} />
+              <SortableHeader label="Display Name" sortKey="display" sortState={sortState} onSort={toggle} />
               <SortableHeader label="Global Role" sortKey="role" sortState={sortState} onSort={toggle} />
               <SortableHeader label="Status" sortKey="status" sortState={sortState} onSort={toggle} />
               <SortableHeader label="Created" sortKey="created" sortState={sortState} onSort={toggle} />
@@ -241,9 +330,9 @@ export function Tier2Directory({
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-xs text-slate-500">Loading…</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-xs text-slate-500">Loading…</td></tr>
             ) : sorted.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-xs text-slate-500">No users match.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-xs text-slate-500">No users match.</td></tr>
             ) : (
               sorted.map((u) => {
                 const sel = selectedUser?.id === u.id
@@ -275,6 +364,7 @@ export function Tier2Directory({
                       </div>
                       <div className="truncate text-[10px] text-slate-500">{u.email}</div>
                     </td>
+                    <td className="border-b border-slate-800 px-3 py-2.5 text-xs text-slate-300">{u.displayName || <span className="text-slate-600">—</span>}</td>
                     {/* Inline role selector — options + edit rights depend on the actor's own
                         authority (see per-row derivation above). stopPropagation so opening the
                         dropdown doesn't also fire the row's select-user click. */}
