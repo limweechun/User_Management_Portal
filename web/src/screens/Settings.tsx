@@ -14,6 +14,8 @@ type TabId = 'general' | 'email' | 'idformat'
 
 // ---- small shared bits -------------------------------------------------------
 const CARD = 'rounded-xl border border-slate-800 bg-slate-900 p-4'
+// Login-page hero photos. The IAM backend accepts up to 10; this UI caps at 8.
+const MAX_PHOTOS = 8
 const INPUT =
   'w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/20'
 const LABEL = 'text-[10px] font-medium uppercase tracking-wide text-slate-400'
@@ -128,18 +130,40 @@ function GeneralTab() {
     }
   }
 
-  const readImage = (file: File, cb: (dataUrl: string) => void) => {
-    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) { toast('Use a PNG, JPG, WEBP or GIF image', 'bad'); return }
-    if (file.size > 1_000_000) { toast('Each image must be under ~1 MB', 'bad'); return }
-    const r = new FileReader()
-    r.onload = () => cb(String(r.result))
-    r.onerror = () => toast('Could not read that image', 'bad')
-    r.readAsDataURL(file)
+  // Resolves the data URL, or null when the file is rejected or unreadable — the
+  // reason has already been toasted by then.
+  const readImage = (file: File): Promise<string | null> => {
+    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) { toast('Use a PNG, JPG, WEBP or GIF image', 'bad'); return Promise.resolve(null) }
+    if (file.size > 1_000_000) { toast('Each image must be under ~1 MB', 'bad'); return Promise.resolve(null) }
+    return new Promise((resolve) => {
+      const r = new FileReader()
+      r.onload = () => resolve(String(r.result))
+      r.onerror = () => { toast('Could not read that image', 'bad'); resolve(null) }
+      r.readAsDataURL(file)
+    })
   }
-  const onLogoFile = (e: ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) readImage(f, setLogoDataUrl) }
-  const onPhotoFiles = (e: ChangeEvent<HTMLInputElement>) => {
+  const onLogoFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    const d = await readImage(f)
+    if (d) setLogoDataUrl(d)
+  }
+  const onPhotoFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+    // Array.from first: the FileList is live, so the `value = ''` reset below empties it.
     const files = Array.from(e.target.files || []); e.target.value = ''
-    files.forEach((f) => readImage(f, (d) => setPhotos((p) => (p.length >= 8 ? p : [...p, d]))))
+    // Count only the photos that actually LAND. Budgeting slots against the number
+    // of files picked would burn a slot on every rejected file, dropping valid ones
+    // that would have fit and claiming a cap breach that never happened.
+    let landed = photos.length
+    let skipped = false
+    for (const f of files) {
+      if (landed >= MAX_PHOTOS) { skipped = true; break }
+      const d = await readImage(f)
+      if (!d) continue
+      landed += 1
+      setPhotos((p) => (p.length >= MAX_PHOTOS ? p : [...p, d]))
+    }
+    if (skipped) toast(`Up to ${MAX_PHOTOS} photos — extra files were skipped.`, 'bad')
   }
 
   if (loading) return <p className="text-xs text-slate-400">Loading…</p>
@@ -198,14 +222,14 @@ function GeneralTab() {
                 </button>
               </div>
             ))}
-            {photos.length < 8 ? (
+            {photos.length < MAX_PHOTOS ? (
               <label className="grid h-16 w-24 cursor-pointer place-items-center rounded-lg border border-dashed border-slate-700 text-[11px] text-slate-500 transition-colors hover:border-emerald-500 hover:text-emerald-300">
                 + Add
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={onPhotoFiles} className="hidden" />
               </label>
             ) : null}
           </div>
-          <p className="mt-1.5 text-[11px] text-slate-400">Shown on the login page hero (rotating if multiple). PNG/JPG/WEBP/GIF, under ~1 MB each, up to 8.</p>
+          <p className="mt-1.5 text-[11px] text-slate-400">Shown on the login page hero (rotating if multiple). PNG/JPG/WEBP/GIF, under ~1 MB each, up to {MAX_PHOTOS}.</p>
         </div>
 
         <div className="mt-3">
