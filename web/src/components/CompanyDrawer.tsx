@@ -38,15 +38,22 @@ export function CompanyDrawer({
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
   const [logo, setLogo] = useState<string | undefined>(undefined) // undefined = unchanged, '' = clear, data-URL = new
   const [curLogo, setCurLogo] = useState<string | null>(null)
+  // The company stamp (chop). Same three-state convention as the logo.
+  const [stamp, setStamp] = useState<string | undefined>(undefined)
+  const [curStamp, setCurStamp] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [deleting, setDeleting] = useState(false) // showing the deletion-request form
   const [reason, setReason] = useState('')
 
   useEffect(() => {
     if (!open) return
-    if (company) { setF(fromCompany(company)); setStatus(company.status || 'active'); setCurLogo(company.logo ?? null) }
-    else { setF({ ...EMPTY_FORM }); setStatus('active'); setCurLogo(null) }
-    setLogo(undefined); setDeleting(false); setReason('')
+    if (company) {
+      setF(fromCompany(company)); setStatus(company.status || 'active')
+      setCurLogo(company.logo ?? null); setCurStamp(company.stamp ?? null)
+    } else {
+      setF({ ...EMPTY_FORM }); setStatus('active'); setCurLogo(null); setCurStamp(null)
+    }
+    setLogo(undefined); setStamp(undefined); setDeleting(false); setReason('')
   }, [open, company])
 
   useEffect(() => {
@@ -58,18 +65,24 @@ export function CompanyDrawer({
 
   const set = (k: FieldKey) => (e: ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }))
 
-  const onFile = (e: ChangeEvent<HTMLInputElement>) => {
+  /** One picker for both images — the logo and the stamp differ only in where the result goes. */
+  const pickImage = (what: 'logo' | 'stamp') => (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = '' // allow re-selecting the same file later
     if (!file) return
     if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) { toast('Use a PNG, JPG, WEBP or GIF image', 'bad'); return }
-    if (file.size > 1_000_000) { toast('Logo image must be under ~1 MB', 'bad'); return }
+    if (file.size > 1_000_000) { toast(`${what === 'logo' ? 'Logo' : 'Stamp'} image must be under ~1 MB`, 'bad'); return }
     const reader = new FileReader()
-    reader.onload = () => { const d = String(reader.result); setLogo(d); setCurLogo(d) }
+    reader.onload = () => {
+      const d = String(reader.result)
+      if (what === 'logo') { setLogo(d); setCurLogo(d) } else { setStamp(d); setCurStamp(d) }
+    }
     reader.onerror = () => toast('Could not read that image', 'bad')
     reader.readAsDataURL(file)
   }
+  const onFile = pickImage('logo')
   const clearLogo = () => { setLogo(''); setCurLogo(null) }
+  const clearStamp = () => { setStamp(''); setCurStamp(null) }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -79,6 +92,7 @@ export function CompanyDrawer({
       // Profile only — status changes go through the deletion request / reactivate.
       const payload: Partial<Company> = { ...f, name: f.name.trim() }
       if (logo !== undefined) payload.logo = logo // '' clears server-side, data-URL sets it
+      if (stamp !== undefined) payload.stamp = stamp
       const saved = isEdit
         ? ({ ...company, ...((await iam.updateCompany(company!.id, payload)) as Company) } as Company)
         : await iam.createCompany(payload)
@@ -148,6 +162,31 @@ export function CompanyDrawer({
                 </div>
               </div>
               <div className="mt-2 text-[10px] text-slate-500">PNG/JPG/WEBP/GIF, under ~1 MB. Shown on document letterheads.</div>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+              <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Company stamp (chop)</div>
+              <div className="flex items-center gap-3">
+                <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+                  {curStamp ? <img src={curStamp} alt="Company stamp" className="h-full w-full object-contain" /> : <span className="text-[9px] text-slate-600">No stamp</span>}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
+                    <ImagePlus className="h-3.5 w-3.5" /> {curStamp ? 'Replace' : 'Upload'}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={pickImage('stamp')} className="hidden" />
+                  </label>
+                  {curStamp ? (
+                    <button type="button" onClick={clearStamp} className="inline-flex items-center gap-1.5 text-[11px] text-rose-400 transition-colors duration-200 hover:text-rose-300">
+                      <Trash2 className="h-3 w-3" /> Remove stamp
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div className="mt-2 text-[10px] text-slate-500">
+                A transparent PNG works best — it is affixed OVER the signature area, and a white
+                box would hide what is underneath. Only users granted the right to affix it can
+                put it on a document.
+              </div>
             </div>
 
             <Input label="Company name" value={f.name} onChange={set('name')} required autoFocus={!isEdit} />

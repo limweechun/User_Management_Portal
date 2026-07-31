@@ -110,6 +110,8 @@ export interface Company {
   phone?: string | null
   website?: string | null
   logo?: string | null
+  /** Company stamp / chop, affixed to documents by users granted that right. */
+  stamp?: string | null
   epfNo?: string | null
   socsoNo?: string | null
   eisNo?: string | null
