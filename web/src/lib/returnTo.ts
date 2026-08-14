@@ -1,4 +1,4 @@
-import { iam, type App } from './iam'
+import { iam, type App, type Me } from './iam'
 
 // SSO deep-link return. An app can send a signed-out user to the portal to authenticate with
 // ?return=<deep-link>; once authed we bounce them straight back to the linked document instead
@@ -129,6 +129,60 @@ export function claimBounce(target: string): boolean {
   // The exact same href, again, within seconds: that's the flicker signature.
   if (prev.href === target && now - prev.ts < BOUNCE_WINDOW_MS) return false
   return writeBounce({ v: 4, href: target, ts: now })
+}
+
+// ---------------------------------------------------------------------------
+// App token handoff (?redirect_uri=<app callback>&state=<nonce>)
+//
+// PSM-style apps run their own backend session: their login page sends a signed-out user
+// here naming the callback it wants back on (e.g. /psjags01/auth/callback) plus an
+// anti-CSRF state. Until 2026-08-14 the portal IGNORED these params — an already-authed
+// user just got the launcher again and had to find the app's tile by hand (the owner's
+// "why do I click multiple times to reach PSM"). Now the portal finishes the trip: mint
+// that app's access token and land on the callback with #token=...&state=... — the same
+// fragment shape the launcher's own tile handoff uses, and fragments never reach servers
+// or logs.
+//
+// Guards, because a token must never be handed to an address an attacker chose:
+//   1. protocol must be http(s);
+//   2. the callback's first path segment must be a REGISTERED app's id (that is the app
+//      whose token is minted), the app must be live (and not in maintenance for
+//      non-supers), and the user must actually hold a company on it;
+//   3. the callback's origin must be our own or that registered app's own catalog origin;
+//   4. any attacker-supplied fragment is discarded — the token becomes THE fragment.
+// Every failure returns null and the caller lands on the launcher, exactly as before.
+
+export function hasHandoffParam(): boolean {
+  try { return new URLSearchParams(location.search).has('redirect_uri') } catch { return false }
+}
+
+export async function resolveHandoffTarget(me: Me, isSuper: boolean): Promise<string | null> {
+  let raw = ''
+  let state = ''
+  try {
+    const p = new URLSearchParams(location.search)
+    raw = p.get('redirect_uri') || ''
+    state = p.get('state') || ''
+  } catch { return null }
+  if (!raw) return null
+  let u: URL
+  try { u = new URL(raw, location.origin) } catch { return null }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+  u.hash = ''
+  const appId = u.pathname.replace(/^\/+/, '').split('/')[0] || ''
+  const companyId = me.apps?.[appId]?.companies?.[0]?.companyId
+  if (!appId || !companyId) return null
+  // Catalog checks fail CLOSED: no catalog, no token handoff.
+  let apps: App[]
+  try { apps = await iam.listApps() } catch { return null }
+  const app = apps.find((a) => a.id === appId)
+  if (!app || app.active === false) return null
+  if (app.maintenanceMode && !isSuper) return null
+  if (u.origin !== location.origin && !allowedOrigins(apps).has(u.origin)) return null
+  try {
+    const r = await iam.appAccessToken(appId, companyId)
+    return `${u.href}#token=${encodeURIComponent(r.accessToken)}${state ? `&state=${encodeURIComponent(state)}` : ''}`
+  } catch { return null }
 }
 
 // Resolve + validate the ?return target against the app-URL allowlist. Returns the safe absolute

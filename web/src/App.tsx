@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { iam, canUsePortal } from './lib/iam'
-import { resolveReturnTarget, claimBounce, clearBounceGuard, hasReturnParam } from './lib/returnTo'
+import { iam, canUsePortal, isSuperAdmin, type Me } from './lib/iam'
+import {
+  resolveReturnTarget, resolveHandoffTarget, claimBounce, clearBounceGuard,
+  hasReturnParam, hasHandoffParam,
+} from './lib/returnTo'
 import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
@@ -40,6 +43,18 @@ async function settleReturn(): Promise<boolean> {
   return false
 }
 
+// The ?redirect_uri token handoff (see resolveHandoffTarget), settled on the same two paths
+// as settleReturn: arriving already-authed, and straight after a login. True = navigated away.
+// The flicker brake is keyed on the callback WITHOUT the token — the token differs every mint,
+// while a genuine loop always re-presents the identical callback.
+async function settleHandoff(m: Me): Promise<boolean> {
+  if (!hasHandoffParam()) return false
+  const target = await resolveHandoffTarget(m, isSuperAdmin(m))
+  if (target && claimBounce(target.split('#')[0])) { location.replace(target); return true }
+  dropReturnParam() // unusable or brake refused → idempotent launcher landing
+  return false
+}
+
 // Boot sequence mirrors the legacy app.js init(): handle ?logout / ?reset first, then resolve
 // the session via GET /me. The 'app' phase is a placeholder until P1 (AdminShell) + P2 (Launcher).
 export function App() {
@@ -75,11 +90,13 @@ export function App() {
       const m = await refresh()
       if (!m) { setPhase('login'); return }
       if (m.status === 'pending') { setPhase('awaiting'); return }
-      // SSO deep-link: an app sent us here to sign in (?return=<deep-link>). Already authed →
-      // bounce straight back to the linked document instead of dead-ending on the launcher.
-      // (Legacy app.js init() at :115-116.) claimBounce() breaks the flicker: if we're handed the
-      // identical deep-link we just bounced to seconds ago (the app 401s no matter what we do), we
-      // stop bouncing and show the launcher, and drop the ?return so the launcher stays put on reload.
+      // SSO deep-link: an app sent us here to sign in (?return=<deep-link> or a
+      // ?redirect_uri token handoff). Already authed → bounce straight back into the app
+      // instead of dead-ending on the launcher. (Legacy app.js init() at :115-116.)
+      // claimBounce() breaks the flicker: if we're handed the identical target we just
+      // bounced to seconds ago (the app 401s no matter what we do), we stop bouncing and
+      // show the launcher, and drop the trigger param so the launcher stays put on reload.
+      if (await settleHandoff(m)) return
       if (await settleReturn()) return
       setPhase('app')
     })()
@@ -90,8 +107,10 @@ export function App() {
     if (!m) { setPhase('login'); return }
     if (m.status === 'pending') { setPhase('awaiting'); return }
     // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
-    // if an app handed us a ?return deep-link, go there rather than the launcher — same flicker
-    // guard, so a fresh login always gets its first bounce but an instant bounce-back can't flicker.
+    // if an app handed us a ?redirect_uri or ?return, go there rather than the launcher — same
+    // flicker guard, so a fresh login always gets its first bounce but an instant bounce-back
+    // can't flicker.
+    if (await settleHandoff(m)) return
     if (await settleReturn()) return
     setPhase('app')
   }

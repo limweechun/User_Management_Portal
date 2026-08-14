@@ -55,12 +55,36 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [granted, me, isSuper])
 
-  const hrefFor = (a: App) => {
+  const internalHref = (a: App) => {
     const mount = '/' + a.id
-    const internal = a.url === mount || (a.url || '').startsWith(mount + '/') ? (a.url as string) : mount
+    return a.url === mount || (a.url || '').startsWith(mount + '/') ? (a.url as string) : mount
+  }
+  const tokenHref = (a: App, tok: string) => (HANDOFF_CALLBACK[a.id] || a.url || '') + '#token=' + tok
+
+  const hrefFor = (a: App) => {
     const tok = tokens[a.id]
-    if (tok) return (HANDOFF_CALLBACK[a.id] || a.url || '') + '#token=' + tok
-    return internal
+    return tok ? tokenHref(a, tok) : internalHref(a)
+  }
+
+  // The launch-token race (owner report 2026-08-14: "multiple clicks to reach PSM"): tokens
+  // are minted in the background after the launcher renders, and a quick first click used to
+  // navigate on the bare mount — the app then bounced back here and the user had to click the
+  // tile again. Now a click that beats the mint holds the navigation, mints right then, and
+  // goes straight to the app's callback. One click, whatever the timing.
+  const [openingId, setOpeningId] = useState<string | null>(null)
+  const openApp = (e: { preventDefault: () => void }, a: App) => {
+    clearBounceGuard()
+    const needsToken = /^https?:\/\//.test(a.url || '') || HANDOFF_CALLBACK[a.id]
+    if (!needsToken || tokens[a.id]) return // href already carries the right door
+    e.preventDefault()
+    if (openingId) return // one launch at a time
+    const companyId = me?.apps[a.id]?.companies[0]?.companyId
+    if (!companyId) { window.location.assign(internalHref(a)); return }
+    setOpeningId(a.id)
+    iam.appAccessToken(a.id, companyId)
+      .then((r) => window.location.assign(tokenHref(a, r.accessToken)))
+      // Minting failed → the old cold landing, which the ?redirect_uri handoff now recovers.
+      .catch(() => window.location.assign(internalHref(a)))
   }
 
   return (
@@ -111,12 +135,14 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                 return (
                   // Opening an app from here is a deliberate launch: drop the one-shot ?return
                   // bounce guard so a legitimate deep-link bounce is allowed again straight away.
-                  <a key={a.id} href={hrefFor(a)} onClick={clearBounceGuard} className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all duration-200 hover:border-slate-700 hover:shadow-sm">
+                  <a key={a.id} href={hrefFor(a)} onClick={(e) => openApp(e, a)} className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all duration-200 hover:border-slate-700 hover:shadow-sm">
                     <Tile
                       name={a.name}
                       icon={a.icon}
                       foot={
-                        a.maintenanceMode ? (
+                        openingId === a.id ? (
+                          <span className="flex items-center gap-1 text-emerald-300">Opening…</span>
+                        ) : a.maintenanceMode ? (
                           <span className="flex items-center gap-1 text-amber-400"><Wrench className="h-3 w-3" /> Maintenance — enter</span>
                         ) : (
                           <span className="flex items-center gap-1 text-emerald-300">Open <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" /></span>
