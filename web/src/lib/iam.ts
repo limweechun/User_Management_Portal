@@ -102,6 +102,8 @@ export interface Company {
   status: 'active' | 'inactive'
   regNo?: string | null
   sstNo?: string | null
+  faxNo?: string | null
+  whatsappNo?: string | null
   address?: string | null
   address2?: string | null
   postcode?: string | null

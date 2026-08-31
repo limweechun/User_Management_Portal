@@ -4,7 +4,7 @@ import { useToast } from './Toast'
 import { iam, type Company } from '../lib/iam'
 
 const EMPTY_FORM = {
-  name: '', regNo: '', sstNo: '', email: '', phone: '', address: '', address2: '', city: '', state: '', postcode: '',
+  name: '', regNo: '', sstNo: '', email: '', phone: '', faxNo: '', whatsappNo: '', address: '', address2: '', city: '', state: '', postcode: '',
   website: '', epfNo: '', socsoNo: '', eisNo: '', incomeTaxNo: '',
 }
 type FieldKey = keyof typeof EMPTY_FORM
@@ -12,6 +12,7 @@ type FieldKey = keyof typeof EMPTY_FORM
 function fromCompany(c: Company): typeof EMPTY_FORM {
   return {
     name: c.name || '', regNo: c.regNo || '', sstNo: c.sstNo || '', email: c.email || '', phone: c.phone || '',
+    faxNo: c.faxNo || '', whatsappNo: c.whatsappNo || '',
     address: c.address || '', address2: c.address2 || '', city: c.city || '', state: c.state || '',
     postcode: c.postcode || '', website: c.website || '',
     epfNo: c.epfNo || '', socsoNo: c.socsoNo || '', eisNo: c.eisNo || '', incomeTaxNo: c.incomeTaxNo || '',
@@ -198,7 +199,13 @@ export function CompanyDrawer({
             <Input label="SST registration no." value={f.sstNo} onChange={set('sstNo')} placeholder="e.g. W24-2311-32100007" />
             <div className="grid grid-cols-2 gap-3">
               <Input label="Email" type="email" value={f.email} onChange={set('email')} />
-              <Input label="Phone" value={f.phone} onChange={set('phone')} />
+              <Input label="Phone / Hunting Line" value={f.phone} onChange={set('phone')} />
+            </div>
+            {/* The other two numbers a letterhead carries. Both optional: a company with
+                neither simply prints neither. */}
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="WhatsApp no." value={f.whatsappNo} onChange={set('whatsappNo')} />
+              <Input label="Fax no." value={f.faxNo} onChange={set('faxNo')} />
             </div>
             <Input label="Address line 1" value={f.address} onChange={set('address')} />
             <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
