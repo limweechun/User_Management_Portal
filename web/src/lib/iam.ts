@@ -101,6 +101,7 @@ export interface Company {
   companyCode?: string | null
   status: 'active' | 'inactive'
   regNo?: string | null
+  sstNo?: string | null
   address?: string | null
   address2?: string | null
   postcode?: string | null

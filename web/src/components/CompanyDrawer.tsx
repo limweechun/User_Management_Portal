@@ -4,14 +4,14 @@ import { useToast } from './Toast'
 import { iam, type Company } from '../lib/iam'
 
 const EMPTY_FORM = {
-  name: '', regNo: '', email: '', phone: '', address: '', address2: '', city: '', state: '', postcode: '',
+  name: '', regNo: '', sstNo: '', email: '', phone: '', address: '', address2: '', city: '', state: '', postcode: '',
   website: '', epfNo: '', socsoNo: '', eisNo: '', incomeTaxNo: '',
 }
 type FieldKey = keyof typeof EMPTY_FORM
 
 function fromCompany(c: Company): typeof EMPTY_FORM {
   return {
-    name: c.name || '', regNo: c.regNo || '', email: c.email || '', phone: c.phone || '',
+    name: c.name || '', regNo: c.regNo || '', sstNo: c.sstNo || '', email: c.email || '', phone: c.phone || '',
     address: c.address || '', address2: c.address2 || '', city: c.city || '', state: c.state || '',
     postcode: c.postcode || '', website: c.website || '',
     epfNo: c.epfNo || '', socsoNo: c.socsoNo || '', eisNo: c.eisNo || '', incomeTaxNo: c.incomeTaxNo || '',
@@ -193,6 +193,9 @@ export function CompanyDrawer({
 
             <Input label="Company name" value={f.name} onChange={set('name')} required autoFocus={!isEdit} />
             <Input label="SSM registration no." value={f.regNo} onChange={set('regNo')} />
+            {/* Sits with SSM because they are the same kind of thing — the company's two
+                registered numbers. It prints on the letterhead of documents that go out. */}
+            <Input label="SST registration no." value={f.sstNo} onChange={set('sstNo')} placeholder="e.g. W24-2311-32100007" />
             <div className="grid grid-cols-2 gap-3">
               <Input label="Email" type="email" value={f.email} onChange={set('email')} />
               <Input label="Phone" value={f.phone} onChange={set('phone')} />
