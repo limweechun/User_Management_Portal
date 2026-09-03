@@ -359,7 +359,13 @@ export function Tier2Directory({
                     onClick={() => selectUser(u)}
                     className={'cursor-pointer transition-colors duration-150 ' + (sel ? 'bg-emerald-500/10' : 'hover:bg-slate-800/50')}
                   >
-                    <td className="border-b border-slate-800 px-3 py-2.5 font-mono text-[11px] text-slate-400">{u.userCode || '—'}</td>
+                    {/* No User ID until the account is approved (owner ask 2026-09-03). The
+                        codes run in one never-reused sequence, so a sign-up that is never
+                        admitted must not burn one — setting a real Global Role in this row
+                        issues it, and the reload right after brings it back into this cell. */}
+                    <td className="border-b border-slate-800 px-3 py-2.5 font-mono text-[11px] text-slate-400">
+                      {u.userCode || <span className="font-sans text-[10px] text-amber-400/90" title="No User ID yet — give this account a Global Role to approve it and issue one">Pending</span>}
+                    </td>
                     <td className="border-b border-slate-800 px-3 py-2.5">
                       <div className={'text-xs font-medium ' + (sel ? 'text-emerald-200' : 'text-slate-200')}>
                         {u.fullName}
