@@ -14,7 +14,16 @@ type Access = 'none' | 'user' | 'companyadmin' | 'appadmin'
 
 // Tier 3 — App Access (right column). For the user picked in Tier 1, within the company
 // picked in Tier 2: one dropdown per app — No Access / Ordinary User / App Admin (this
-// company) / App Admin — all companies — plus deletion-approval rights. "App Admin (this
+// company) / App Admin — every company in this app — plus deletion-approval rights.
+//
+// "every company in this app" is exactly that, and only since 2026-09-04: the flag used to
+// grant privilege without reach, so an app-wide admin still saw only the companies granted to
+// them one at a time — while this panel labelled every company "all companies" regardless.
+// The company they could not open was the one the screen said they administered. IAM now
+// fills in the rest (access.service.mergeCompanyAccess), scoped to the companies LINKED to
+// that app, which is why the wording says "in this app" and not "all companies".
+//
+// "App Admin (this
 // company)" is a PER-COMPANY admin (stored on the company access row); "App Admin — all
 // companies" is the app-wide super-grant (stored on the entitlement). A user can therefore
 // be app admin in one company and ordinary/none in another. Global role and account status
@@ -161,14 +170,14 @@ export function Tier3AccessPanel({
                         <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-700/60 text-[10px] font-semibold text-slate-300">{initials(app.shortName || app.name)}</div>
                         <div className="min-w-0">
                           <div className={'truncate text-xs font-medium ' + (granted ? 'text-emerald-200' : 'text-slate-200')}>{app.name}</div>
-                          <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App admin — all companies' : acc === 'companyadmin' ? 'App admin — ' + company.name : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
+                          <div className="text-[10px] text-slate-500">{acc === 'appadmin' ? 'App admin — every company in this app' : acc === 'companyadmin' ? 'App admin — ' + company.name : acc === 'user' ? 'Member of ' + company.name : 'No access in ' + company.name}</div>
                         </div>
                       </div>
                       <StyledSelect tone="dark" value={acc} onChange={(v) => setAccess(app, v as Access)} disabled={(acc === 'appadmin' || acc === 'companyadmin') && !superGate} className="w-44 shrink-0">
                         <option value="none">No Access</option>
                         <option value="user">Ordinary User</option>
                         {superGate || acc === 'companyadmin' ? <option value="companyadmin">App Admin (this company)</option> : null}
-                        {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin — all companies</option> : null}
+                        {superGate || acc === 'appadmin' ? <option value="appadmin">App Admin — every company in this app</option> : null}
                       </StyledSelect>
                     </div>
                     {granted ? (
