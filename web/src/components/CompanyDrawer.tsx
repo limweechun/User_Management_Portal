@@ -6,6 +6,7 @@ import { iam, type Company } from '../lib/iam'
 const EMPTY_FORM = {
   name: '', regNo: '', sstNo: '', email: '', phone: '', faxNo: '', whatsappNo: '', address: '', address2: '', city: '', state: '', postcode: '',
   website: '', epfNo: '', socsoNo: '', eisNo: '', incomeTaxNo: '',
+  bankName: '', bankAccountName: '', bankAccountNo: '',
 }
 type FieldKey = keyof typeof EMPTY_FORM
 
@@ -16,6 +17,7 @@ function fromCompany(c: Company): typeof EMPTY_FORM {
     address: c.address || '', address2: c.address2 || '', city: c.city || '', state: c.state || '',
     postcode: c.postcode || '', website: c.website || '',
     epfNo: c.epfNo || '', socsoNo: c.socsoNo || '', eisNo: c.eisNo || '', incomeTaxNo: c.incomeTaxNo || '',
+    bankName: c.bankName || '', bankAccountName: c.bankAccountName || '', bankAccountNo: c.bankAccountNo || '',
   }
 }
 
@@ -223,6 +225,19 @@ export function CompanyDrawer({
                 <Input label="SOCSO no." value={f.socsoNo} onChange={set('socsoNo')} />
                 <Input label="EIS no." value={f.eisNo} onChange={set('eisNo')} />
                 <Input label="Income tax no." value={f.incomeTaxNo} onChange={set('incomeTaxNo')} />
+              </div>
+            </div>
+
+            {/* The company's bank account (owner ask 2026-10-12): printed on rent invoices and letters
+                for payments, as the landlord's account. */}
+            <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+              <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">Bank account (for payments to the company)</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Bank" value={f.bankName} onChange={set('bankName')} placeholder="e.g. Public Bank Berhad" />
+                <Input label="Account no." value={f.bankAccountNo} onChange={set('bankAccountNo')} />
+              </div>
+              <div className="mt-3">
+                <Input label="Account holder name" value={f.bankAccountName} onChange={set('bankAccountName')} placeholder="As registered with the bank" />
               </div>
             </div>
 

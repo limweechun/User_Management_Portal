@@ -119,6 +119,9 @@ export interface Company {
   socsoNo?: string | null
   eisNo?: string | null
   incomeTaxNo?: string | null
+  bankName?: string | null
+  bankAccountName?: string | null
+  bankAccountNo?: string | null
   activeUsers?: number
   inactiveUsers?: number
 }
