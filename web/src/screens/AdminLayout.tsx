@@ -10,12 +10,14 @@ import { FeedbackCenter } from './FeedbackCenter'
 import { AuditLog } from './AuditLog'
 import { Settings } from './Settings'
 import { CompanyDeletions } from './CompanyDeletions'
+import { usePlatformName } from '../lib/platform'
 
 type Tab = 'workspace' | 'apps' | 'approvals' | 'feedback' | 'audit' | 'settings'
 
 // The admin section shell: top bar with the section nav + the active screen. The Workspace tab
 // is the 3-tier grid (full height, no padding); the others scroll in a padded container.
 export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onExit: () => void }) {
+  const platformName = usePlatformName()
   const { me } = useSession()
   const [tab, setTab] = useState<Tab>('workspace')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -83,7 +85,7 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
       </div>
 
       <footer className="shrink-0 border-t border-slate-800 bg-slate-900 py-2 text-center text-[11px] font-semibold text-slate-500">
-        True Eco Digital Platform
+        {platformName}
       </footer>
 
       <PersonalSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />

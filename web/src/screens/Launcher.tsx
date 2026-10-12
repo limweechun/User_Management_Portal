@@ -6,12 +6,14 @@ import { initials } from '../lib/util'
 import { iconByName } from '../lib/appIcons'
 import { clearBounceGuard } from '../lib/returnTo'
 import { PersonalSettings } from '../components/PersonalSettings'
+import { usePlatformName } from '../lib/platform'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
 const HANDOFF_CALLBACK: Record<string, string> = { psjags01: '/psjags01/auth/callback' }
 
 // The app launcher (post-login home) — ported from app.js:201-299.
 export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; onOpenAdmin: () => void }) {
+  const platformName = usePlatformName()
   const { me } = useSession()
   const [apps, setApps] = useState<App[]>([])
   const [, setBranding] = useState<Branding>({})
@@ -165,7 +167,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
       </div>
 
       <footer className="shrink-0 border-t border-slate-800 bg-slate-900 py-2 text-center text-[11px] font-semibold text-slate-500">
-        True Eco Digital Platform
+        {platformName}
       </footer>
 
       <PersonalSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />

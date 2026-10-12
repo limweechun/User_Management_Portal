@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react'
 import { iam, type Branding } from '../lib/iam'
 import { useToast } from '../components/Toast'
+import { usePlatformName } from '../lib/platform'
 
 type Mode = 'login' | 'register' | 'forgot' | 'reset'
 
@@ -23,6 +24,7 @@ export function Login({
   initialNotice?: string
   onAuthed: () => void
 }) {
+  const platformName = usePlatformName()
   const { toast } = useToast()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [branding, setBranding] = useState<Branding>({})
@@ -107,7 +109,7 @@ export function Login({
                 {branding.message || 'Access every app with a single account — provisioned and governed centrally.'}
               </p>
             </div>
-            <div className="text-[11px] text-emerald-50/70">© 2026 True Eco Digital Platform</div>
+            <div className="text-[11px] text-emerald-50/70">© 2026 {platformName}</div>
           </div>
         </div>
       </div>
