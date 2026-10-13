@@ -6,7 +6,7 @@ import { initials } from '../lib/util'
 import { iconByName } from '../lib/appIcons'
 import { clearBounceGuard } from '../lib/returnTo'
 import { PersonalSettings } from '../components/PersonalSettings'
-import { usePlatformName } from '../lib/platform'
+import { usePlatformName, useSite } from '../lib/platform'
 import { MyTeam } from '../components/MyTeam'
 import { Subscription } from '../components/Subscription'
 
@@ -16,6 +16,8 @@ const HANDOFF_CALLBACK: Record<string, string> = { psjags01: '/psjags01/auth/cal
 // The app launcher (post-login home) — ported from app.js:201-299.
 export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; onOpenAdmin: () => void }) {
   const platformName = usePlatformName()
+  // The subscription site (superlisting.net) wears the platform's name; True Eco's portal keeps its own.
+  const accountSite = useSite() === 'account'
   const { me } = useSession()
   const [apps, setApps] = useState<App[]>([])
   const [, setBranding] = useState<Branding>({})
@@ -25,7 +27,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   // SaaS stage 3: free-trial banner (nothing shows when no company of mine is on a trial).
   const [trial, setTrial] = useState<{ companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[]>([])
   // SaaS stage 4: "My team" for a customer's administrator (the list is empty / 404 elsewhere).
-  const [teams, setTeams] = useState<{ companyId: string; name: string }[]>([])
+  const [teams, setTeams] = useState<{ companyId: string; name: string; kind?: string }[]>([])
   const [teamOpen, setTeamOpen] = useState<string | null>(null)
   const [subOpen, setSubOpen] = useState<string | null>(null)
   // One platform: my open support visits (platform team only; others get [] / 403 → nothing shown).
@@ -121,9 +123,9 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
     <div className="flex h-screen flex-col bg-slate-950">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 px-6">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500 text-[11px] font-medium text-slate-950">WO</div>
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500 text-[11px] font-medium text-slate-950">{accountSite ? brandInitials(platformName) : 'WO'}</div>
           <div>
-            <div className="text-xs font-medium text-slate-200">Workplace Operations</div>
+            <div className="text-xs font-medium text-slate-200">{accountSite ? platformName : 'Workplace Operations'}</div>
             <div className="text-[10px] text-slate-500">Choose an app</div>
           </div>
         </div>
@@ -182,10 +184,10 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                     className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
                     My team{teams.length > 1 ? ` · ${t.name}` : ''}
                   </button>
-                  <button onClick={() => setSubOpen(t.companyId)}
+                  {t.kind !== 'internal' ? <button onClick={() => setSubOpen(t.companyId)}
                     className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-all duration-200 hover:bg-emerald-500/10">
                     Subscription{teams.length > 1 ? ` · ${t.name}` : ''}
-                  </button>
+                  </button> : null}
                 </span>
               ))}
             </div>
@@ -258,4 +260,10 @@ function Tile({ name, icon, foot }: { name: string; icon?: string; foot: ReactNo
       <div className="mt-3 text-[11px]">{foot}</div>
     </>
   )
+}
+
+/** Two-letter mark for the header tile, e.g. "SuperListing.net" -> "SL". */
+function brandInitials(name: string): string {
+  const caps = name.replace(/\.[a-z]+$/i, '').match(/[A-Z]/g) || []
+  return (caps.length >= 2 ? caps.slice(0, 2).join('') : name.slice(0, 2)).toUpperCase() || 'SL'
 }

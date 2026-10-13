@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SignInScreen } from './components/SignInScreen'
-import { usePlatformName } from './lib/platform'
+import { usePlatformName, useSite } from './lib/platform'
+import { AccountLanding } from './screens/AccountLanding'
 import { iam, canUsePortal, isSuperAdmin, type Me } from './lib/iam'
 import {
   resolveReturnTarget, resolveHandoffTarget, claimBounce, clearBounceGuard,
@@ -62,6 +63,8 @@ async function settleHandoff(m: Me): Promise<boolean> {
 export function App() {
   const { me, refresh, signOut } = useSession()
   const [phase, setPhase] = useState<Phase>('booting')
+  const site = useSite()
+  const [loginMode, setLoginMode] = useState<'login' | 'register' | null>(null)
   const [resetToken, setResetToken] = useState<string | undefined>(undefined)
   const [loginNotice, setLoginNotice] = useState<string | undefined>(undefined)
 
@@ -126,7 +129,13 @@ export function App() {
       <BootScreen />
     )
   }
+  // The subscription site (superlisting.net): signed-out visitors see the pricing page first.
+  if (phase === 'login' && site === 'account' && !loginMode && !loginNotice) {
+    return <AccountLanding onStart={() => setLoginMode('register')} onSignIn={() => setLoginMode('login')} />
+  }
+  if (phase === 'login' && site === null) return <BootScreen />
   if (phase === 'login' || phase === 'reset') {
+    if (phase === 'login' && loginMode) return <Login key={loginMode} initialMode={loginMode} initialNotice={loginNotice} onAuthed={toApp} />
     return <Login initialMode={phase === 'reset' ? 'reset' : 'login'} resetToken={resetToken} initialNotice={loginNotice} onAuthed={toApp} />
   }
   if (phase === 'awaiting') {

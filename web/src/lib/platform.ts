@@ -10,6 +10,9 @@ let pending: Promise<string> | null = null
 /** SaaS stage 3: does this deployment let visitors sign up their own company (with a trial)? */
 export type SelfSignup = { on: boolean; trialDays: number }
 let signup: SelfSignup = { on: false, trialDays: 14 }
+/** Which site this address is: the subscription site (superlisting.net) or the staff portal. */
+export type Site = 'account' | 'portal'
+let site: Site = 'portal'
 
 function load(): Promise<string> {
   if (cached != null) return Promise.resolve(cached)
@@ -18,11 +21,23 @@ function load(): Promise<string> {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         signup = { on: d?.selfSignup === true, trialDays: Number(d?.trialDays) || 14 }
+        site = d?.site === 'account' ? 'account' : 'portal'
         return (cached = typeof d?.name === 'string' ? d.name : '')
       })
       .catch(() => (cached = ''))
   }
   return pending
+}
+
+/** 'account' on the subscription site, else 'portal'; null until known (so nothing flashes). */
+export function useSite(): Site | null {
+  const [s, setS] = useState<Site | null>(cached != null ? site : null)
+  useEffect(() => {
+    let live = true
+    load().then(() => { if (live) setS(site) })
+    return () => { live = false }
+  }, [])
+  return s
 }
 
 /** Self sign-up settings; off until /platform says otherwise. */

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { LayoutGrid, AppWindow, MessageSquare, History, Settings as SettingsIcon, Grid2x2, LogOut, Settings2, ShieldAlert } from 'lucide-react'
+import { LayoutGrid, Building2, AppWindow, MessageSquare, History, Settings as SettingsIcon, Grid2x2, LogOut, Settings2, ShieldAlert } from 'lucide-react'
 import { isPortalAdmin } from '../lib/iam'
 import { useSession } from '../context/SessionContext'
 import { roleLabel, initials } from '../lib/util'
@@ -10,9 +10,10 @@ import { FeedbackCenter } from './FeedbackCenter'
 import { AuditLog } from './AuditLog'
 import { Settings } from './Settings'
 import { CompanyDeletions } from './CompanyDeletions'
-import { usePlatformName } from '../lib/platform'
+import { usePlatformName, useSelfSignup } from '../lib/platform'
+import { Customers } from './Customers'
 
-type Tab = 'workspace' | 'apps' | 'approvals' | 'feedback' | 'audit' | 'settings'
+type Tab = 'workspace' | 'customers' | 'apps' | 'approvals' | 'feedback' | 'audit' | 'settings'
 
 // The admin section shell: top bar with the section nav + the active screen. The Workspace tab
 // is the 3-tier grid (full height, no padding); the others scroll in a padded container.
@@ -22,9 +23,11 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
   const [tab, setTab] = useState<Tab>('workspace')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const portalAdmin = isPortalAdmin(me)
+  const saas = useSelfSignup().on // Customers exist only where companies can sign up
 
   const allTabs: { id: Tab; label: string; icon: ReactNode; show: boolean }[] = [
     { id: 'workspace', label: 'Workspace', icon: <LayoutGrid className="h-3.5 w-3.5" />, show: true },
+    { id: 'customers', label: 'Customers', icon: <Building2 className="h-3.5 w-3.5" />, show: portalAdmin && saas },
     { id: 'apps', label: 'Apps', icon: <AppWindow className="h-3.5 w-3.5" />, show: portalAdmin },
     { id: 'approvals', label: 'Approvals', icon: <ShieldAlert className="h-3.5 w-3.5" />, show: portalAdmin },
     { id: 'feedback', label: 'Feedback', icon: <MessageSquare className="h-3.5 w-3.5" />, show: true },
@@ -74,6 +77,7 @@ export function AdminLayout({ onSignOut, onExit }: { onSignOut: () => void; onEx
         ) : (
           <div className="h-full overflow-auto bg-slate-950 px-6 py-5">
             <div className="mx-auto max-w-6xl">
+              {tab === 'customers' ? <Customers /> : null}
               {tab === 'apps' ? <AppsRegistry /> : null}
               {tab === 'approvals' ? <CompanyDeletions /> : null}
               {tab === 'feedback' ? <FeedbackCenter /> : null}
