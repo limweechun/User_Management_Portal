@@ -8,6 +8,7 @@ import { clearBounceGuard } from '../lib/returnTo'
 import { PersonalSettings } from '../components/PersonalSettings'
 import { usePlatformName } from '../lib/platform'
 import { MyTeam } from '../components/MyTeam'
+import { Subscription } from '../components/Subscription'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
 const HANDOFF_CALLBACK: Record<string, string> = { psjags01: '/psjags01/auth/callback' }
@@ -26,6 +27,12 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   // SaaS stage 4: "My team" for a customer's administrator (the list is empty / 404 elsewhere).
   const [teams, setTeams] = useState<{ companyId: string; name: string }[]>([])
   const [teamOpen, setTeamOpen] = useState<string | null>(null)
+  const [subOpen, setSubOpen] = useState<string | null>(null)
+  // Back from Billplz (stage 5): ?billing=paid|unpaid|unknown — say what happened, then tidy the URL.
+  const [billingNote] = useState(() => new URLSearchParams(location.search).get('billing'))
+  useEffect(() => {
+    if (billingNote) history.replaceState(null, '', location.pathname)
+  }, [billingNote])
   useEffect(() => {
     iam.myTeams().then((r) => setTeams(Array.isArray(r) ? r : [])).catch(() => setTeams([]))
   }, [])
@@ -147,17 +154,31 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                   : null}
             </div>
           ))}
+          {billingNote ? (
+            <div role="status" className={`mb-4 rounded-lg border px-4 py-3 text-xs ${billingNote === 'paid' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/40 bg-amber-500/10 text-amber-200'}`}>
+              {billingNote === 'paid' ? 'Payment received — thank you. Your subscription is active.'
+                : billingNote === 'unpaid' ? 'The payment was not completed. You can try again from Subscription.'
+                : 'We could not confirm the payment yet. If you paid, it will show within a few minutes.'}
+            </div>
+          ) : null}
           {teams.length > 0 ? (
             <div className="mb-4 flex flex-wrap gap-2">
               {teams.map((t) => (
-                <button key={t.companyId} onClick={() => setTeamOpen(t.companyId)}
-                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
-                  My team{teams.length > 1 ? ` · ${t.name}` : ''}
-                </button>
+                <span key={t.companyId} className="flex gap-2">
+                  <button onClick={() => setTeamOpen(t.companyId)}
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
+                    My team{teams.length > 1 ? ` · ${t.name}` : ''}
+                  </button>
+                  <button onClick={() => setSubOpen(t.companyId)}
+                    className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-all duration-200 hover:bg-emerald-500/10">
+                    Subscription{teams.length > 1 ? ` · ${t.name}` : ''}
+                  </button>
+                </span>
               ))}
             </div>
           ) : null}
           {teamOpen ? <MyTeam companyId={teamOpen} onClose={() => setTeamOpen(null)} /> : null}
+          {subOpen ? <Subscription companyId={subOpen} onClose={() => setSubOpen(null)} /> : null}
           <h1 className="mb-5 text-base font-medium text-slate-200">Your apps</h1>
           {granted.length === 0 && !canUsePortal(me) ? (
             <p className="text-xs text-slate-500">No apps have been assigned to your account yet. Please contact an administrator.</p>

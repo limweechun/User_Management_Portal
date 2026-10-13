@@ -24,6 +24,16 @@ export interface TeamApp { appId: string; name: string; plan: string | null; pla
 export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
 export interface TeamView { company: { id: string; name: string }; apps: TeamApp[]; members: TeamMember[]; me: string }
 type Grant = { appId: string; role: string }
+// ---- SaaS stage 5: billing ----
+export interface BillingApp { appId: string; name: string; monthlySen: Record<string, number>; perProperty: boolean; extraUserMonthlySen: number | null; setupFeeSen: number; current: { plan: string; extraUsers: number; properties: number | null } | null }
+export interface BillingInfo {
+  enabled: boolean; sandbox: boolean
+  company: { id: string; name: string; trialEndsAt: string | null; paidUntil: string | null; trialDaysLeft: number | null }
+  apps: BillingApp[]; yearChargedMonths: number
+  payments: { id: string; amountSen: number; period: string; status: string; createdAt: string; paidAt: string | null; url: string | null }[]
+}
+export interface BillingQuote { period: string; months: number; lines: { appId: string; label: string; amountSen: number }[]; totalSen: number }
+type BillingItem = { appId: string; plan: string; properties?: number; extraUsers?: number }
 
 // ---- Types ----
 export type GlobalRole = 'SUPERADMIN' | 'ADMIN' | 'DIRECTOR' | 'ORDINARY_USER' | 'NEW_USER'
@@ -221,6 +231,9 @@ export const iam = {
   /** SaaS stage 3: free-trial status of my companies (empty when none is on a trial). */
   companyPlans: (companyId: string) => req<CompanyPlanRow[]>('GET', `/admin/companies/${companyId}/plans`),
   setCompanyPlan: (companyId: string, appId: string, b: { plan: string | null; extraUsers: number }) => req('PUT', `/admin/companies/${companyId}/plans/${appId}`, b),
+  billing: (companyId: string) => req<BillingInfo>('GET', `/billing/${companyId}`),
+  billingQuote: (companyId: string, b: { period: string; items: BillingItem[] }) => req<BillingQuote>('POST', `/billing/${companyId}/quote`, b),
+  billingCheckout: (companyId: string, b: { period: string; items: BillingItem[] }) => req<{ url: string }>('POST', `/billing/${companyId}/checkout`, b),
   myTeams: () => req<{ companyId: string; name: string }[]>('GET', '/team'),
   team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
   teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),
