@@ -68,9 +68,12 @@ export function App() {
   useEffect(() => {
     void (async () => {
       const params = new URLSearchParams(location.search)
+      // Every app signs out the same way (owner ask 2026-10-13): it sends the browser here with
+      // ?logout=1; this ends the session for all apps and lands on the login page with a note.
       if (params.get('logout') === '1') {
         try { await iam.logout() } catch { /* best effort cookie clear */ }
         history.replaceState(null, '', location.pathname)
+        setLoginNotice(SIGNED_OUT_NOTICE)
         setPhase('login')
         return
       }
@@ -116,7 +119,7 @@ export function App() {
     if (await settleReturn()) return
     setPhase('app')
   }
-  const out = () => signOut().then(() => setPhase('login'))
+  const out = () => { signingOutNow = true; setPhase('booting'); return signOut().then(() => { setLoginNotice(SIGNED_OUT_NOTICE); setPhase('login') }) }
 
   if (phase === 'booting') {
     return (
@@ -206,5 +209,12 @@ function Info({ label, value }: { label: string; value: string }) {
 // The suite's shared sign-in screen (owner ask 2026-10-13: one look in every app).
 function BootScreen() {
   const platformName = usePlatformName()
-  return <SignInScreen platformName={platformName || '\u00a0'} appName="User Management" busy title="Signing you in…" message="Checking your session." />
+  // A sign-out arrival (?logout=1) or the portal's own Sign out: same screen, the sign-out words.
+  const signingOut = new URLSearchParams(location.search).get('logout') === '1' || signingOutNow
+  return signingOut
+    ? <SignInScreen platformName={platformName || '\u00a0'} appName="User Management" busy title="Signing you out…" message="Ending your session in every app." />
+    : <SignInScreen platformName={platformName || '\u00a0'} appName="User Management" busy title="Signing you in…" message="Checking your session." />
 }
+
+const SIGNED_OUT_NOTICE = "You've signed out of all apps."
+let signingOutNow = false
