@@ -9,6 +9,8 @@ import { PersonalSettings } from '../components/PersonalSettings'
 import { usePlatformName, useSite } from '../lib/platform'
 import { MyTeam } from '../components/MyTeam'
 import { Subscription } from '../components/Subscription'
+import { CompanySettings } from '../components/CompanySettings'
+import { SupportVisits } from '../components/SupportAccess'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
 const HANDOFF_CALLBACK: Record<string, string> = { psjags01: '/psjags01/auth/callback' }
@@ -25,11 +27,20 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   // SaaS stage 3: free-trial banner (nothing shows when no company of mine is on a trial).
-  const [trial, setTrial] = useState<{ companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[]>([])
+  const [trial, setTrial] = useState<{ companyId: string; name: string; daysLeft: number | null; lapsed: boolean; closedApps?: string[] }[]>([])
   // SaaS stage 4: "My team" for a customer's administrator (the list is empty / 404 elsewhere).
   const [teams, setTeams] = useState<{ companyId: string; name: string; kind?: string }[]>([])
   const [teamOpen, setTeamOpen] = useState<string | null>(null)
   const [subOpen, setSubOpen] = useState<string | null>(null)
+  // The CUSTOMER PORTAL (2026-10-14): a customer's administrator gets tabs for their own company —
+  // Apps · Team · Subscription · Company settings · Support visits. Staff who are not the
+  // administrator, and the owner's own companies, keep the plain launcher.
+  type Tab = 'apps' | 'team' | 'subscription' | 'company' | 'support'
+  const [tab, setTab] = useState<Tab>('apps')
+  const customerCos = teams.filter((t) => t.kind === 'customer')
+  const [coId, setCoId] = useState<string | null>(null)
+  const activeCo = customerCos.find((c) => c.companyId === coId) || customerCos[0] || null
+  const internalTeams = teams.filter((t) => t.kind !== 'customer')
   // One platform: my open support visits (platform team only; others get [] / 403 → nothing shown).
   const [visits, setVisits] = useState<{ id: string; companyName: string; expiresAt: string }[]>([])
   useEffect(() => {
@@ -158,6 +169,8 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
             >
               {t.lapsed
                 ? <>The free trial for <b>{t.name}</b> has ended, so its apps are closed. Subscribe to continue — your data is kept.</>
+                : t.closedApps && t.closedApps.length
+                  ? <>{t.name} does not subscribe to {t.closedApps.join(' and ')}, so {t.closedApps.length === 1 ? 'it is' : 'they are'} closed. Add {t.closedApps.length === 1 ? 'it' : 'them'} in Subscription — your data is kept.</>
                 : t.daysLeft != null
                   ? <>Free trial for <b>{t.name}</b>: {t.daysLeft === 1 ? '1 day' : `${t.daysLeft} days`} left.</>
                   : null}
@@ -176,9 +189,9 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                 : 'We could not confirm the payment yet. If you paid, it will show within a few minutes.'}
             </div>
           ) : null}
-          {teams.length > 0 ? (
+          {internalTeams.length > 0 && !activeCo ? (
             <div className="mb-4 flex flex-wrap gap-2">
-              {teams.map((t) => (
+              {internalTeams.map((t) => (
                 <span key={t.companyId} className="flex gap-2">
                   <button onClick={() => setTeamOpen(t.companyId)}
                     className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
@@ -194,6 +207,27 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
           ) : null}
           {teamOpen ? <MyTeam companyId={teamOpen} onClose={() => setTeamOpen(null)} /> : null}
           {subOpen ? <Subscription companyId={subOpen} onClose={() => setSubOpen(null)} /> : null}
+          {activeCo ? (
+            <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+              {customerCos.length > 1 ? (
+                <select aria-label="Company" value={activeCo.companyId} onChange={(e) => setCoId(e.target.value)}
+                  className="mr-2 rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1.5 text-xs text-slate-200">
+                  {customerCos.map((c) => <option key={c.companyId} value={c.companyId}>{c.name}</option>)}
+                </select>
+              ) : <span className="mr-2 text-xs font-medium text-slate-300">{activeCo.name}</span>}
+              {([['apps', 'Apps'], ['team', 'Team'], ['subscription', 'Subscription'], ['company', 'Company settings'], ['support', 'Support visits']] as [Tab, string][]).map(([id, label]) => (
+                <button key={id} onClick={() => setTab(id)}
+                  className={'rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ' + (tab === id ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200')}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {activeCo && tab === 'team' ? <MyTeam key={activeCo.companyId} companyId={activeCo.companyId} onClose={() => setTab('apps')} inline /> : null}
+          {activeCo && tab === 'subscription' ? <Subscription key={activeCo.companyId} companyId={activeCo.companyId} onClose={() => setTab('apps')} inline /> : null}
+          {activeCo && tab === 'company' ? <CompanySettings key={activeCo.companyId} companyId={activeCo.companyId} /> : null}
+          {activeCo && tab === 'support' ? <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5"><SupportVisits key={activeCo.companyId} companyId={activeCo.companyId} /></div> : null}
+          {!activeCo || tab === 'apps' ? <>
           <h1 className="mb-5 text-base font-medium text-slate-200">Your apps</h1>
           {granted.length === 0 && !canUsePortal(me) ? (
             <p className="text-xs text-slate-500">No apps have been assigned to your account yet. Please contact an administrator.</p>
@@ -237,6 +271,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
               ) : null}
             </div>
           )}
+          </> : null}
         </div>
       </div>
 

@@ -24,6 +24,13 @@ export interface TeamApp { appId: string; name: string; plan: string | null; pla
 export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
 export interface TeamView { company: { id: string; name: string }; apps: TeamApp[]; members: TeamMember[]; me: string }
 type Grant = { appId: string; role: string }
+/** The customer's own company profile (customer portal, 2026-10-14). */
+export interface CompanyProfile {
+  name: string; companyCode?: string | null; regNo?: string | null; sstNo?: string | null; address?: string | null; address2?: string | null
+  postcode?: string | null; city?: string | null; state?: string | null; email?: string | null; phone?: string | null; faxNo?: string | null
+  whatsappNo?: string | null; website?: string | null; bankName?: string | null; bankAccountName?: string | null; bankAccountNo?: string | null
+  logo?: string | null; stamp?: string | null
+}
 export interface CustomerRow {
   id: string; name: string; companyCode?: string | null; email?: string | null; status: string
   trialEndsAt: string | null; paidUntil: string | null; state: 'paid' | 'trial' | 'lapsed' | 'none'
@@ -31,7 +38,7 @@ export interface CustomerRow {
 }
 export interface SupportVisit { id: string; companyId: string; companyName: string; reason: string; startedAt: string; expiresAt: string }
 // ---- SaaS stage 5: billing ----
-export interface BillingApp { appId: string; name: string; monthlySen: Record<string, number>; perProperty: boolean; extraUserMonthlySen: number | null; setupFeeSen: number; current: { plan: string; extraUsers: number; properties: number | null } | null }
+export interface BillingApp { appId: string; name: string; monthlySen: Record<string, number>; perProperty: boolean; extraUserMonthlySen: number | null; setupFeeSen: number; current: { plan: string; extraUsers: number; properties: number | null } | null; paidUntil?: string | null; open: boolean }
 export interface BillingInfo {
   enabled: boolean; sandbox: boolean
   company: { id: string; name: string; trialEndsAt: string | null; paidUntil: string | null; trialDaysLeft: number | null }
@@ -247,12 +254,14 @@ export const iam = {
   startSupport: (companyId: string, reason: string) => req('POST', `/admin/companies/${companyId}/support`, { reason }),
   endSupport: (grantId: string) => req('POST', `/admin/support/${grantId}/end`, {}),
   teamSupport: (companyId: string) => req<{ id: string; by: string; reason: string; startedAt: string; endedAt: string; open: boolean }[]>('GET', `/team/${companyId}/support`),
+  companyProfile: (companyId: string) => req<CompanyProfile>('GET', `/team/${companyId}/company`),
+  saveCompanyProfile: (companyId: string, b: Partial<CompanyProfile>) => req('PUT', `/team/${companyId}/company`, b),
   myTeams: () => req<{ companyId: string; name: string; kind?: string }[]>('GET', '/team'),
   team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
   teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),
   teamUpdate: (companyId: string, userId: string, grants: Grant[]) => req('PUT', `/team/${companyId}/members/${userId}`, { grants }),
   teamRemove: (companyId: string, userId: string) => req('DELETE', `/team/${companyId}/members/${userId}`),
-  myTrial: () => req<{ companies: { companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[] }>('GET', '/me/trial'),
+  myTrial: () => req<{ companies: { companyId: string; name: string; daysLeft: number | null; lapsed: boolean; closedApps?: string[] }[] }>('GET', '/me/trial'),
   verifyEmail: (token: string) => req('POST', '/auth/verify-email', { token }),
   login: (email: string, password: string, rememberMe?: boolean) =>
     req('POST', '/auth/login', { email, password, rememberMe: !!rememberMe }),

@@ -9,7 +9,7 @@ import { SupportVisits } from './SupportAccess'
  * the users of their own company, within the plan's user limit. The server enforces every rule
  * (own company only, no admin roles, the limit); this screen just shows them.
  */
-export function MyTeam({ companyId, onClose }: { companyId: string; onClose: () => void }) {
+export function MyTeam({ companyId, onClose, inline = false }: { companyId: string; onClose: () => void; /** customer portal tab instead of a pop-up */ inline?: boolean }) {
   const { toast } = useToast()
   const [view, setView] = useState<TeamView | null>(null)
   const [adding, setAdding] = useState(false)
@@ -28,12 +28,12 @@ export function MyTeam({ companyId, onClose }: { companyId: string; onClose: () 
   const roleLabel = (appId: string, role: string) => view?.apps.find((a) => a.appId === appId)?.roles.find((r) => r.name === role)?.label || role
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[784px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+    <div className={inline ? "" : "fixed inset-0 z-50 flex items-center justify-center p-4"}>
+      {!inline && <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />}
+      <div className={inline ? "flex w-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900" : "relative z-10 flex max-h-[90vh] w-full max-w-[784px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"}>
         <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
           <div className="truncate text-sm font-medium text-slate-100">My team{view ? ' · ' + view.company.name : ''}</div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200" aria-label="Close"><X className="h-4 w-4" /></button>
+          {!inline && <button onClick={onClose} className="text-slate-400 hover:text-slate-200" aria-label="Close"><X className="h-4 w-4" /></button>}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {!view ? <div className="text-xs text-slate-500">Loading…</div> : (
@@ -75,7 +75,7 @@ export function MyTeam({ companyId, onClose }: { companyId: string; onClose: () 
                   )
                 })}
               </div>
-              <SupportVisits companyId={companyId} />
+              {!inline && <SupportVisits companyId={companyId} />}
               {(adding || editing) && (
                 <MemberForm view={view} member={editing} companyId={companyId}
                   onDone={() => { setAdding(false); setEditing(null); load() }} onCancel={() => { setAdding(false); setEditing(null) }} />

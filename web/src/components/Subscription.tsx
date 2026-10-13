@@ -14,7 +14,7 @@ const day = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateStrin
 
 type Pick = { on: boolean; plan: string; properties: number; extraUsers: number }
 
-export function Subscription({ companyId, onClose }: { companyId: string; onClose: () => void }) {
+export function Subscription({ companyId, onClose, inline = false }: { companyId: string; onClose: () => void; /** customer portal tab instead of a pop-up */ inline?: boolean }) {
   const { toast } = useToast()
   const [info, setInfo] = useState<BillingInfo | null>(null)
   const [period, setPeriod] = useState<'month' | 'year'>('month')
@@ -67,12 +67,12 @@ export function Subscription({ companyId, onClose }: { companyId: string; onClos
   const c = info?.company
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[784px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+    <div className={inline ? "" : "fixed inset-0 z-50 flex items-center justify-center p-4"}>
+      {!inline && <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={onClose} />}
+      <div className={inline ? "flex w-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900" : "relative z-10 flex max-h-[90vh] w-full max-w-[784px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"}>
         <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
           <div className="truncate text-sm font-medium text-slate-100">Subscription{c ? ' · ' + c.name : ''}</div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200" aria-label="Close"><X className="h-4 w-4" /></button>
+          {!inline && <button onClick={onClose} className="text-slate-400 hover:text-slate-200" aria-label="Close"><X className="h-4 w-4" /></button>}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {!info || !c ? <div className="text-xs text-slate-500">Loading…</div> : (
@@ -119,6 +119,9 @@ export function Subscription({ companyId, onClose }: { companyId: string; onClos
                           </label>
                         </>
                       ) : null}
+                      <span className={'text-[11px] ' + (a.open ? 'text-emerald-300' : 'text-amber-300')}>
+                        {a.open ? (a.paidUntil && new Date(a.paidUntil) > new Date() ? `Paid until ${day(a.paidUntil)}` : 'Open') : 'Not subscribed — closed'}
+                      </span>
                       {a.setupFeeSen ? <span className="ml-auto text-[11px] text-slate-500">+ one-off setup {rm(a.setupFeeSen)}</span> : null}
                     </div>
                   )
