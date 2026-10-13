@@ -2,6 +2,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent, type InputHTMLAt
 import { ImagePlus, ShieldAlert, Trash2, X } from 'lucide-react'
 import { useToast } from './Toast'
 import { iam, type Company } from '../lib/iam'
+import { CompanyPlans } from './CompanyPlans'
+import { useSelfSignup } from '../lib/platform'
 
 const EMPTY_FORM = {
   name: '', regNo: '', sstNo: '', email: '', phone: '', faxNo: '', whatsappNo: '', address: '', address2: '', city: '', state: '', postcode: '',
@@ -36,6 +38,7 @@ export function CompanyDrawer({
   onSaved: (c: Company, isNew: boolean) => void
 }) {
   const isEdit = !!company
+  const saas = useSelfSignup().on // plans exist only on a SaaS deployment
   const { toast } = useToast()
   const [f, setF] = useState({ ...EMPTY_FORM })
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
@@ -240,6 +243,8 @@ export function CompanyDrawer({
                 <Input label="Account holder name" value={f.bankAccountName} onChange={set('bankAccountName')} placeholder="As registered with the bank" />
               </div>
             </div>
+
+            {isEdit && saas ? <CompanyPlans companyId={company!.id} /> : null}
 
             {isEdit && (
               <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">

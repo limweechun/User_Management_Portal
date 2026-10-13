@@ -18,6 +18,13 @@ async function req<T = any>(method: string, path: string, body?: unknown): Promi
   return data as T
 }
 
+// ---- SaaS stage 4: plans + My team ----
+export interface CompanyPlanRow { appId: string; appName: string; plan: string | null; extraUsers: number; extraUsersAllowed: boolean; seats: number | null; used: number }
+export interface TeamApp { appId: string; name: string; plan: string | null; planLabel: string | null; seats: number | null; used: number; roles: { name: string; label: string }[] }
+export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
+export interface TeamView { company: { id: string; name: string }; apps: TeamApp[]; members: TeamMember[]; me: string }
+type Grant = { appId: string; role: string }
+
 // ---- Types ----
 export type GlobalRole = 'SUPERADMIN' | 'ADMIN' | 'DIRECTOR' | 'ORDINARY_USER' | 'NEW_USER'
 export type PlatformRole = 'superadmin' | 'admin' | 'user'
@@ -212,6 +219,13 @@ export const iam = {
   // Auth
   register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string }) => req('POST', '/auth/register', b),
   /** SaaS stage 3: free-trial status of my companies (empty when none is on a trial). */
+  companyPlans: (companyId: string) => req<CompanyPlanRow[]>('GET', `/admin/companies/${companyId}/plans`),
+  setCompanyPlan: (companyId: string, appId: string, b: { plan: string | null; extraUsers: number }) => req('PUT', `/admin/companies/${companyId}/plans/${appId}`, b),
+  myTeams: () => req<{ companyId: string; name: string }[]>('GET', '/team'),
+  team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
+  teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),
+  teamUpdate: (companyId: string, userId: string, grants: Grant[]) => req('PUT', `/team/${companyId}/members/${userId}`, { grants }),
+  teamRemove: (companyId: string, userId: string) => req('DELETE', `/team/${companyId}/members/${userId}`),
   myTrial: () => req<{ companies: { companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[] }>('GET', '/me/trial'),
   verifyEmail: (token: string) => req('POST', '/auth/verify-email', { token }),
   login: (email: string, password: string, rememberMe?: boolean) =>

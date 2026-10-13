@@ -7,6 +7,7 @@ import { iconByName } from '../lib/appIcons'
 import { clearBounceGuard } from '../lib/returnTo'
 import { PersonalSettings } from '../components/PersonalSettings'
 import { usePlatformName } from '../lib/platform'
+import { MyTeam } from '../components/MyTeam'
 
 // Apps that run their own backend session need a launch token handed to a callback route.
 const HANDOFF_CALLBACK: Record<string, string> = { psjags01: '/psjags01/auth/callback' }
@@ -22,6 +23,13 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
 
   // SaaS stage 3: free-trial banner (nothing shows when no company of mine is on a trial).
   const [trial, setTrial] = useState<{ companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[]>([])
+  // SaaS stage 4: "My team" for a customer's administrator (the list is empty / 404 elsewhere).
+  const [teams, setTeams] = useState<{ companyId: string; name: string }[]>([])
+  const [teamOpen, setTeamOpen] = useState<string | null>(null)
+  useEffect(() => {
+    iam.myTeams().then((r) => setTeams(Array.isArray(r) ? r : [])).catch(() => setTeams([]))
+  }, [])
+
   useEffect(() => {
     iam.myTrial().then((r) => setTrial(r.companies || [])).catch(() => setTrial([]))
   }, [])
@@ -139,6 +147,17 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                   : null}
             </div>
           ))}
+          {teams.length > 0 ? (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {teams.map((t) => (
+                <button key={t.companyId} onClick={() => setTeamOpen(t.companyId)}
+                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:bg-slate-800/60">
+                  My team{teams.length > 1 ? ` · ${t.name}` : ''}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {teamOpen ? <MyTeam companyId={teamOpen} onClose={() => setTeamOpen(null)} /> : null}
           <h1 className="mb-5 text-base font-medium text-slate-200">Your apps</h1>
           {granted.length === 0 && !canUsePortal(me) ? (
             <p className="text-xs text-slate-500">No apps have been assigned to your account yet. Please contact an administrator.</p>
