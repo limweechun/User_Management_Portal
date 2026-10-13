@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react'
 import { iam, type Branding } from '../lib/iam'
 import { useToast } from '../components/Toast'
-import { usePlatformName } from '../lib/platform'
+import { usePlatformName, useSelfSignup } from '../lib/platform'
 
 type Mode = 'login' | 'register' | 'forgot' | 'reset'
 
@@ -25,6 +25,8 @@ export function Login({
   onAuthed: () => void
 }) {
   const platformName = usePlatformName()
+  const selfSignup = useSelfSignup()
+  const [companyName, setCompanyName] = useState('')
   const { toast } = useToast()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [branding, setBranding] = useState<Branding>({})
@@ -60,8 +62,9 @@ export function Login({
         await iam.login(email.trim(), password, remember)
         onAuthed()
       } else if (mode === 'register') {
-        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password })
-        setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
+        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password, ...(selfSignup.on ? { companyName: companyName.trim() } : {}) })
+        if (selfSignup.on) setNotice(`Your company is set up with a ${selfSignup.trialDays}-day free trial. Check your email for the verification link, then sign in.`)
+        else setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
       } else if (mode === 'forgot') {
         await iam.forgotPassword(email.trim())
@@ -133,6 +136,19 @@ export function Login({
           <div className="mt-5 space-y-3">
             {mode === 'register' ? (
               <>
+                {selfSignup.on ? (
+                  <Field icon={<Building2 className="h-4 w-4" />}>
+                    <input
+                      className={inputCls}
+                      placeholder="Company name"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                      maxLength={120}
+                      autoComplete="organization"
+                    />
+                  </Field>
+                ) : null}
                 <Field icon={<User className="h-4 w-4" />}>
                   <input
                     className={inputCls}

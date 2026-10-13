@@ -7,16 +7,33 @@ import { useEffect, useState } from 'react'
  */
 let cached: string | null = null
 let pending: Promise<string> | null = null
+/** SaaS stage 3: does this deployment let visitors sign up their own company (with a trial)? */
+export type SelfSignup = { on: boolean; trialDays: number }
+let signup: SelfSignup = { on: false, trialDays: 14 }
 
 function load(): Promise<string> {
   if (cached != null) return Promise.resolve(cached)
   if (!pending) {
     pending = fetch('/api/v1/platform', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => (cached = typeof d?.name === 'string' ? d.name : ''))
+      .then((d) => {
+        signup = { on: d?.selfSignup === true, trialDays: Number(d?.trialDays) || 14 }
+        return (cached = typeof d?.name === 'string' ? d.name : '')
+      })
       .catch(() => (cached = ''))
   }
   return pending
+}
+
+/** Self sign-up settings; off until /platform says otherwise. */
+export function useSelfSignup(): SelfSignup {
+  const [s, setS] = useState<SelfSignup>(signup)
+  useEffect(() => {
+    let live = true
+    load().then(() => { if (live) setS(signup) })
+    return () => { live = false }
+  }, [])
+  return s
 }
 
 /** The platform name, '' until it has loaded (so no other brand ever flashes up). */

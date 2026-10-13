@@ -20,6 +20,12 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   const [tokens, setTokens] = useState<Record<string, string>>({})
   const [settingsOpen, setSettingsOpen] = useState(false)
 
+  // SaaS stage 3: free-trial banner (nothing shows when no company of mine is on a trial).
+  const [trial, setTrial] = useState<{ companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[]>([])
+  useEffect(() => {
+    iam.myTrial().then((r) => setTrial(r.companies || [])).catch(() => setTrial([]))
+  }, [])
+
   useEffect(() => {
     iam.listApps().then(setApps).catch(() => setApps([]))
     iam.getBranding().then(setBranding).catch(() => {})
@@ -120,6 +126,19 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
 
       <div className="flex-1 overflow-auto px-6 py-8">
         <div className="mx-auto max-w-5xl">
+          {trial.map((t) => (
+            <div
+              key={t.companyId}
+              role={t.lapsed ? 'alert' : 'status'}
+              className={`mb-4 rounded-lg border px-4 py-3 text-xs ${t.lapsed ? 'border-amber-500/40 bg-amber-500/10 text-amber-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'}`}
+            >
+              {t.lapsed
+                ? <>The free trial for <b>{t.name}</b> has ended, so its apps are closed. Subscribe to continue — your data is kept.</>
+                : t.daysLeft != null
+                  ? <>Free trial for <b>{t.name}</b>: {t.daysLeft === 1 ? '1 day' : `${t.daysLeft} days`} left.</>
+                  : null}
+            </div>
+          ))}
           <h1 className="mb-5 text-base font-medium text-slate-200">Your apps</h1>
           {granted.length === 0 && !canUsePortal(me) ? (
             <p className="text-xs text-slate-500">No apps have been assigned to your account yet. Please contact an administrator.</p>

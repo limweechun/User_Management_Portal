@@ -210,7 +210,9 @@ export interface Branding {
 // ---- API surface ----
 export const iam = {
   // Auth
-  register: (b: { email: string; fullName: string; displayName?: string; password: string }) => req('POST', '/auth/register', b),
+  register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string }) => req('POST', '/auth/register', b),
+  /** SaaS stage 3: free-trial status of my companies (empty when none is on a trial). */
+  myTrial: () => req<{ companies: { companyId: string; name: string; daysLeft: number | null; lapsed: boolean }[] }>('GET', '/me/trial'),
   verifyEmail: (token: string) => req('POST', '/auth/verify-email', { token }),
   login: (email: string, password: string, rememberMe?: boolean) =>
     req('POST', '/auth/login', { email, password, rememberMe: !!rememberMe }),
