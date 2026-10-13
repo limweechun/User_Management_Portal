@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { SignInScreen } from './components/SignInScreen'
+import { usePlatformName } from './lib/platform'
 import { iam, canUsePortal, isSuperAdmin, type Me } from './lib/iam'
 import {
   resolveReturnTarget, resolveHandoffTarget, claimBounce, clearBounceGuard,
@@ -118,9 +120,7 @@ export function App() {
 
   if (phase === 'booting') {
     return (
-      <div className="grid h-screen place-items-center bg-slate-950">
-        <div className="animate-pulse text-xs text-slate-500">Loading…</div>
-      </div>
+      <BootScreen />
     )
   }
   if (phase === 'login' || phase === 'reset') {
@@ -201,4 +201,10 @@ function Info({ label, value }: { label: string; value: string }) {
       <dd className="mt-0.5 font-medium text-slate-200">{value}</dd>
     </div>
   )
+}
+
+// The suite's shared sign-in screen (owner ask 2026-10-13: one look in every app).
+function BootScreen() {
+  const platformName = usePlatformName()
+  return <SignInScreen platformName={platformName || '\u00a0'} appName="User Management" busy title="Signing you in…" message="Checking your session." />
 }
