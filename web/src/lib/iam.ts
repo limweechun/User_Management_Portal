@@ -24,6 +24,7 @@ export interface TeamApp { appId: string; name: string; plan: string | null; pla
 export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
 export interface TeamView { company: { id: string; name: string }; apps: TeamApp[]; members: TeamMember[]; me: string }
 type Grant = { appId: string; role: string }
+export interface SupportVisit { id: string; companyId: string; companyName: string; reason: string; startedAt: string; expiresAt: string }
 // ---- SaaS stage 5: billing ----
 export interface BillingApp { appId: string; name: string; monthlySen: Record<string, number>; perProperty: boolean; extraUserMonthlySen: number | null; setupFeeSen: number; current: { plan: string; extraUsers: number; properties: number | null } | null }
 export interface BillingInfo {
@@ -114,6 +115,8 @@ export interface AdminUser {
 export interface Company {
   id: string
   name: string
+  /** One platform: internal = the owner's own; customer = signed up itself (closed to the platform team). */
+  kind?: 'internal' | 'customer'
   slug?: string
   companyCode?: string | null
   status: 'active' | 'inactive'
@@ -234,6 +237,10 @@ export const iam = {
   billing: (companyId: string) => req<BillingInfo>('GET', `/billing/${companyId}`),
   billingQuote: (companyId: string, b: { period: string; items: BillingItem[] }) => req<BillingQuote>('POST', `/billing/${companyId}/quote`, b),
   billingCheckout: (companyId: string, b: { period: string; items: BillingItem[] }) => req<{ url: string }>('POST', `/billing/${companyId}/checkout`, b),
+  mySupport: () => req<SupportVisit[]>('GET', '/admin/support/active'),
+  startSupport: (companyId: string, reason: string) => req('POST', `/admin/companies/${companyId}/support`, { reason }),
+  endSupport: (grantId: string) => req('POST', `/admin/support/${grantId}/end`, {}),
+  teamSupport: (companyId: string) => req<{ id: string; by: string; reason: string; startedAt: string; endedAt: string; open: boolean }[]>('GET', `/team/${companyId}/support`),
   myTeams: () => req<{ companyId: string; name: string }[]>('GET', '/team'),
   team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
   teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),

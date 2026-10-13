@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { X, UserPlus, Trash2 } from 'lucide-react'
 import { iam, type TeamView, type TeamMember } from '../lib/iam'
 import { useToast } from './Toast'
+import { SupportVisits } from './SupportAccess'
 
 /**
  * "My team" (SaaS stage 4, 2026-10-13): a customer's administrator adds, changes and removes
@@ -74,6 +75,7 @@ export function MyTeam({ companyId, onClose }: { companyId: string; onClose: () 
                   )
                 })}
               </div>
+              <SupportVisits companyId={companyId} />
               {(adding || editing) && (
                 <MemberForm view={view} member={editing} companyId={companyId}
                   onDone={() => { setAdding(false); setEditing(null); load() }} onCancel={() => { setAdding(false); setEditing(null) }} />

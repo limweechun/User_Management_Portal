@@ -3,6 +3,7 @@ import { ImagePlus, ShieldAlert, Trash2, X } from 'lucide-react'
 import { useToast } from './Toast'
 import { iam, type Company } from '../lib/iam'
 import { CompanyPlans } from './CompanyPlans'
+import { SupportAccess } from './SupportAccess'
 import { useSelfSignup } from '../lib/platform'
 
 const EMPTY_FORM = {
@@ -245,6 +246,7 @@ export function CompanyDrawer({
             </div>
 
             {isEdit && saas ? <CompanyPlans companyId={company!.id} /> : null}
+            {isEdit && company!.kind === 'customer' ? <SupportAccess companyId={company!.id} companyName={company!.name} /> : null}
 
             {isEdit && (
               <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-3">

@@ -28,6 +28,13 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   const [teams, setTeams] = useState<{ companyId: string; name: string }[]>([])
   const [teamOpen, setTeamOpen] = useState<string | null>(null)
   const [subOpen, setSubOpen] = useState<string | null>(null)
+  // One platform: my open support visits (platform team only; others get [] / 403 → nothing shown).
+  const [visits, setVisits] = useState<{ id: string; companyName: string; expiresAt: string }[]>([])
+  useEffect(() => {
+    if (!canUsePortal(me)) return
+    iam.mySupport().then((r) => setVisits(Array.isArray(r) ? r : [])).catch(() => setVisits([]))
+  }, [me])
+  const endVisit = (id: string) => iam.endSupport(id).then(() => setVisits((v) => v.filter((x) => x.id !== id))).catch(() => {})
   // Back from Billplz (stage 5): ?billing=paid|unpaid|unknown — say what happened, then tidy the URL.
   const [billingNote] = useState(() => new URLSearchParams(location.search).get('billing'))
   useEffect(() => {
@@ -152,6 +159,12 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                 : t.daysLeft != null
                   ? <>Free trial for <b>{t.name}</b>: {t.daysLeft === 1 ? '1 day' : `${t.daysLeft} days`} left.</>
                   : null}
+            </div>
+          ))}
+          {visits.map((v) => (
+            <div key={v.id} role="status" className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+              <span>Support access open: <b>{v.companyName}</b> until {new Date(v.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. It shows in your app switchers as “(support)”.</span>
+              <button onClick={() => endVisit(v.id)} className="ml-auto rounded-lg border border-amber-500/40 px-3 py-1 text-xs hover:bg-amber-500/10">End now</button>
             </div>
           ))}
           {billingNote ? (
