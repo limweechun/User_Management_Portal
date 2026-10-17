@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { iam, type BillingInfo, type BillingQuote } from '../lib/iam'
+import { openReceipt } from '../lib/receipt'
 import { useToast } from './Toast'
 
 /**
@@ -158,6 +159,10 @@ export function Subscription({ companyId, onClose, inline = false }: { companyId
                         </span>
                         <span className="ml-auto tabular-nums text-slate-200">{rm(p.amountSen)}</span>
                         {p.url ? <a href={p.url} className="text-emerald-300 underline">Pay now</a> : null}
+                        {p.receiptNo ? (
+                          <button type="button" onClick={() => openReceipt(() => iam.billingReceipt(companyId, p.id)).catch((e) => toast(e?.message || 'Could not open the receipt', 'bad'))}
+                            className="text-emerald-300 underline" title={`Receipt ${p.receiptNo}`}>Receipt {p.receiptNo}</button>
+                        ) : null}
                       </div>
                     ))}
                   </div>

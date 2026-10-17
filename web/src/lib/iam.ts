@@ -43,7 +43,7 @@ export interface BillingInfo {
   enabled: boolean; sandbox: boolean
   company: { id: string; name: string; trialEndsAt: string | null; paidUntil: string | null; trialDaysLeft: number | null }
   apps: BillingApp[]; yearChargedMonths: number
-  payments: { id: string; amountSen: number; period: string; status: string; createdAt: string; paidAt: string | null; url: string | null }[]
+  payments: { id: string; receiptNo?: string | null; amountSen: number; period: string; status: string; createdAt: string; paidAt: string | null; url: string | null }[]
 }
 export interface BillingQuote { period: string; months: number; lines: { appId: string; label: string; amountSen: number }[]; totalSen: number }
 type BillingItem = { appId: string; plan: string; properties?: number; extraUsers?: number }
@@ -247,6 +247,7 @@ export const iam = {
   companyPlans: (companyId: string) => req<CompanyPlanRow[]>('GET', `/admin/companies/${companyId}/plans`),
   setCompanyPlan: (companyId: string, appId: string, b: { plan: string | null; extraUsers: number }) => req('PUT', `/admin/companies/${companyId}/plans/${appId}`, b),
   billing: (companyId: string) => req<BillingInfo>('GET', `/billing/${companyId}`),
+  billingReceipt: (companyId: string, paymentId: string) => req<import('./receipt').Receipt>('GET', `/billing/${companyId}/receipts/${paymentId}`),
   billingQuote: (companyId: string, b: { period: string; items: BillingItem[] }) => req<BillingQuote>('POST', `/billing/${companyId}/quote`, b),
   billingCheckout: (companyId: string, b: { period: string; items: BillingItem[] }) => req<{ url: string }>('POST', `/billing/${companyId}/checkout`, b),
   customers: () => req<CustomerRow[]>('GET', '/admin/customers'),
