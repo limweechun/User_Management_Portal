@@ -25,7 +25,7 @@ These Terms are an agreement between us and the company or organisation that sig
 
 3.2 Each user must have their own login. Logins must not be shared. Each account may be signed in on a limited number of devices at the same time.
 
-3.3 You are responsible for everything done under your users' logins, and for keeping passwords safe. Tell us at once at accounts@fostercircle.com [or a separate support address] if you think a login has been misused.
+3.3 You are responsible for everything done under your users' logins, and for keeping passwords safe. Tell us at once at accounts@fostercircle.com if you think a login has been misused.
 
 3.4 You must give true and up-to-date company and contact details.
 
@@ -43,7 +43,7 @@ These Terms are an agreement between us and the company or organisation that sig
 
 5.3 **Subscriptions do not renew automatically.** Each payment extends your paid period from its current end date. We will remind you by email before the period ends.
 
-5.4 [Prices include / exclude Sales and Service Tax (SST) — confirm whether Foster Circle Sdn Bhd is SST-registered.]
+5.4 Foster Circle Sdn Bhd is not registered for Sales and Service Tax (SST), so no SST is charged. If we become SST-registered, we will add SST to the fees as the law requires and give you notice before your next payment.
 
 5.5 An official receipt is emailed after each payment and can be downloaded from the Subscription page.
 
@@ -74,9 +74,9 @@ These Terms are an agreement between us and the company or organisation that sig
 
 8.1 If you do not renew, the unpaid Apps close at the end of the paid period. Your data is kept, and the Apps reopen as soon as you pay.
 
-8.2 We will keep Customer Data for at least [90] days after an App closes. After that we may delete it, but only after giving at least 30 days' notice to your administrators by email.
+8.2 We will keep Customer Data for 180 days after an App closes. During that time we will email your administrators a reminder every 14 days, giving the date on which the data will be deleted. After the 180 days we may delete it.
 
-8.3 Before your data is deleted, you may ask us at accounts@fostercircle.com [or a separate support address] for an export of your Customer Data [in a common format such as CSV/Excel and your uploaded files]. [A reasonable fee may apply.]
+8.3 Before your data is deleted, you may ask us at accounts@fostercircle.com for an export of your Customer Data [in a common format such as CSV/Excel and your uploaded files]. [A reasonable fee may apply.]
 
 ## 9. Acceptable use
 

@@ -86,11 +86,11 @@ You may:
 - ask us to **transfer** your data to you or another provider, where the PDPA allows;
 - **complain** to us, or to the Personal Data Protection Commissioner.
 
-Send requests to [privacy email]. We will reply within 21 days. A fee allowed by the PDPA may apply to access requests.
+Send requests to accounts@fostercircle.com. We will reply within 21 days. A fee allowed by the PDPA may apply to access requests.
 
 ## 10. Contact
 
-[Data Protection Officer name / title], Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: [privacy email]. Phone: +603-2366 1288.
+[Data Protection Officer name / title], Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: accounts@fostercircle.com. Phone: +603-2366 1288.
 
 ## 11. Changes
 
