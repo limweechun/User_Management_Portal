@@ -35,6 +35,8 @@ export interface CustomerRow {
   id: string; name: string; companyCode?: string | null; email?: string | null; status: string
   trialEndsAt: string | null; paidUntil: string | null; state: 'paid' | 'trial' | 'lapsed' | 'none'
   plans: { appId: string; plan: string }[]; users: number; lastPayment: { amountSen: number; paidAt: string | null } | null
+  /** Closed apps and the date their data may be deleted (Terms 8.2: kept 180 days). */
+  dataKeep: { deleteAfter: string; due: boolean; apps: { appId: string; closedAt: string; deleteAfter: string }[] } | null
 }
 export interface SupportVisit { id: string; companyId: string; companyName: string; reason: string; startedAt: string; expiresAt: string }
 // ---- SaaS stage 5: billing ----

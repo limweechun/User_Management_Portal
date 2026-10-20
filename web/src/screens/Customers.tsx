@@ -23,12 +23,14 @@ export function Customers() {
   const { toast } = useToast()
   const [rows, setRows] = useState<CustomerRow[] | null>(null)
   const [q, setQ] = useState('')
+  const [dueOnly, setDueOnly] = useState(false)
   const [open, setOpen] = useState<Company | null>(null)
 
   const load = () => iam.customers().then(setRows).catch((e) => { toast(e?.message || 'Could not load customers', 'bad'); setRows([]) })
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shown = useMemo(() => (rows || []).filter((r) => !q.trim() || `${r.name} ${r.companyCode || ''} ${r.email || ''}`.toLowerCase().includes(q.trim().toLowerCase())), [rows, q])
+  const dueCount = (rows || []).filter((r) => r.dataKeep?.due).length
+  const shown = useMemo(() => (rows || []).filter((r) => !dueOnly || r.dataKeep?.due).filter((r) => !q.trim() || `${r.name} ${r.companyCode || ''} ${r.email || ''}`.toLowerCase().includes(q.trim().toLowerCase())), [rows, q, dueOnly])
 
   const openCompany = async (id: string) => {
     try {
@@ -45,16 +47,22 @@ export function Customers() {
           <h1 className="text-base font-medium text-slate-200">Customers</h1>
           <p className="text-[11px] text-slate-500">Companies that signed up. Their data is closed to the platform team — open a company for its plans and Support access.</p>
         </div>
+        {dueCount > 0 && (
+          <button onClick={() => setDueOnly((v) => !v)}
+            className={'rounded-lg border px-3 py-2 text-xs ' + (dueOnly ? 'border-rose-500 bg-rose-500/15 text-rose-200' : 'border-rose-500/50 text-rose-300 hover:bg-rose-500/10')}>
+            {dueCount} past the 180-day data date{dueOnly ? ' · show all' : ''}
+          </button>
+        )}
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, ID or email"
           className="w-64 max-w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none" />
       </div>
       {!rows ? <div className="text-xs text-slate-500">Loading…</div> : shown.length === 0 ? <div className="text-xs text-slate-500">No customers yet.</div> : (
         <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full min-w-[760px] text-left text-xs">
+          <table className="w-full min-w-[900px] text-left text-xs">
             <thead className="bg-slate-900 text-[10px] uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2">Company</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Plans</th>
-                <th className="px-3 py-2">Users</th><th className="px-3 py-2">Trial ends / paid until</th><th className="px-3 py-2">Last payment</th><th className="px-3 py-2" />
+                <th className="px-3 py-2">Users</th><th className="px-3 py-2">Trial ends / paid until</th><th className="px-3 py-2">Last payment</th><th className="px-3 py-2">Data kept until</th><th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -68,6 +76,14 @@ export function Customers() {
                     <td className="px-3 py-2 tabular-nums">{r.users}</td>
                     <td className="px-3 py-2">{r.state === 'paid' ? day(r.paidUntil) : day(r.trialEndsAt)}</td>
                     <td className="px-3 py-2 tabular-nums">{r.lastPayment ? `${rm(r.lastPayment.amountSen)} · ${day(r.lastPayment.paidAt)}` : '—'}</td>
+                    <td className="px-3 py-2">
+                      {!r.dataKeep ? '—' : (
+                        <span title={r.dataKeep.apps.map((a) => `${APP_SHORT[a.appId] || a.appId}: closed ${day(a.closedAt)}, kept until ${day(a.deleteAfter)}`).join('\n')}
+                          className={r.dataKeep.due ? 'font-medium text-rose-300' : 'text-amber-200'}>
+                          {day(r.dataKeep.deleteAfter)}{r.dataKeep.due ? ' · may delete (your decision)' : ''}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-right"><button onClick={() => openCompany(r.id)} className="rounded-lg border border-slate-700 px-2.5 py-1 text-[11px] text-slate-200 hover:bg-slate-800">Open</button></td>
                   </tr>
                 )
