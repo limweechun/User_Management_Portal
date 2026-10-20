@@ -58,7 +58,7 @@ We share personal data only with:
 
 ## 6. Transfer outside Malaysia
 
-Our service providers keep data on servers outside Malaysia, in Singapore and Australia [confirm the region of every Supabase project]. We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
+Our service providers keep data on servers outside Malaysia, in Singapore, Australia (Sydney) and Japan (Tokyo). We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
 
 ## 7. How long we keep it
 
