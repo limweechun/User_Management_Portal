@@ -1,7 +1,6 @@
 # SuperListing — Privacy Notice (Personal Data Protection Act 2010)
 
 **DRAFT for review — 20 October 2026. Not yet published. Have a Malaysian lawyer check this before use.**
-**A Bahasa Malaysia version is required under the PDPA before publishing.**
 Items in [square brackets] must be filled in before publishing.
 
 Last updated: [date of publishing]
