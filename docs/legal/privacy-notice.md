@@ -52,14 +52,13 @@ We share personal data only with:
   - database and file storage (Supabase);
   - email delivery (Brevo);
   - payments (Billplz);
-  - [AI features: DeepSeek — when a user uses an AI Insights feature, the relevant records are sent to DeepSeek to produce the summary. Confirm whether to keep this feature on for customers, and list it here.]
 - **Your own company's administrators**, who can see the users in their company and what they do in the Apps.
 - **Authorities**, where the law requires it.
 - **A buyer or successor** of our business, under the same protections, if the business is sold or reorganised.
 
 ## 6. Transfer outside Malaysia
 
-Our service providers keep data on servers outside Malaysia, including in Singapore [and other countries — confirm the region of each provider, e.g. the Supabase project region, and DeepSeek in China if used]. We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
+Our service providers keep data on servers outside Malaysia, including in Singapore [and other countries — confirm the region of each provider, e.g. the Supabase project region]. We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
 
 ## 7. How long we keep it
 
