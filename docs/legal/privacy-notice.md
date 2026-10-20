@@ -8,7 +8,7 @@ Last updated: [date of publishing]
 
 ## 1. Who this notice is from
 
-This notice is given by **Foster Circle Sdn Bhd** (Company No. [registration no.]), [registered address], Malaysia ("we", "us"). We operate the SuperListing platform (the "Platform"). It is given under the Personal Data Protection Act 2010 (the "PDPA").
+This notice is given by **Foster Circle Sdn Bhd** (Registration No. 202001000522 (1356841-U)), No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor, Malaysia ("we", "us"). We operate the SuperListing platform (the "Platform"). It is given under the Personal Data Protection Act 2010 (the "PDPA").
 
 ## 2. Two kinds of personal data
 
@@ -91,7 +91,7 @@ Send requests to [privacy email]. We will reply within 21 days. A fee allowed by
 
 ## 10. Contact
 
-[Data Protection Officer name / title], Foster Circle Sdn Bhd, [address], [privacy email], [phone].
+[Data Protection Officer name / title], Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: [privacy email]. Phone: +603-2366 1288.
 
 ## 11. Changes
 

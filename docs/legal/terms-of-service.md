@@ -7,7 +7,7 @@ Last updated: [date of publishing]
 
 ## 1. Who we are
 
-SuperListing (the "Platform") is provided by **Foster Circle Sdn Bhd** (Company No. [registration no.]), of [registered address], Malaysia ("we", "us", "our").
+SuperListing (the "Platform") is provided by **Foster Circle Sdn Bhd** (Registration No. 202001000522 (1356841-U)), of No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor, Malaysia ("we", "us", "our").
 
 These Terms are an agreement between us and the company or organisation that signs up for the Platform (the "Customer", "you"). The person who signs up confirms that they are authorised to accept these Terms on the Customer's behalf.
 
@@ -25,7 +25,7 @@ These Terms are an agreement between us and the company or organisation that sig
 
 3.2 Each user must have their own login. Logins must not be shared. Each account may be signed in on a limited number of devices at the same time.
 
-3.3 You are responsible for everything done under your users' logins, and for keeping passwords safe. Tell us at once at [support email] if you think a login has been misused.
+3.3 You are responsible for everything done under your users' logins, and for keeping passwords safe. Tell us at once at accounts@fostercircle.com [or a separate support address] if you think a login has been misused.
 
 3.4 You must give true and up-to-date company and contact details.
 
@@ -76,7 +76,7 @@ These Terms are an agreement between us and the company or organisation that sig
 
 8.2 We will keep Customer Data for at least [90] days after an App closes. After that we may delete it, but only after giving at least 30 days' notice to your administrators by email.
 
-8.3 Before your data is deleted, you may ask us at [support email] for an export of your Customer Data [in a common format such as CSV/Excel and your uploaded files]. [A reasonable fee may apply.]
+8.3 Before your data is deleted, you may ask us at accounts@fostercircle.com [or a separate support address] for an export of your Customer Data [in a common format such as CSV/Excel and your uploaded files]. [A reasonable fee may apply.]
 
 ## 9. Acceptable use
 
@@ -121,4 +121,4 @@ We may update these Terms. For any important change we will give at least 30 day
 
 13.3 These Terms, together with our pricing page and our Privacy Notice, are the whole agreement between us about the Platform.
 
-13.4 Contact: Foster Circle Sdn Bhd, [address], [support email], [phone].
+13.4 Contact: Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: accounts@fostercircle.com. Phone: +603-2366 1288.
