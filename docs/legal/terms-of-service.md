@@ -76,7 +76,7 @@ These Terms are an agreement between us and the company or organisation that sig
 
 8.2 We will keep Customer Data for 180 days after an App closes. During that time we will email your administrators a reminder every 14 days, giving the date on which the data will be deleted. After the 180 days we may delete it.
 
-8.3 Before your data is deleted, you may ask us at accounts@fostercircle.com for an export of your Customer Data [in a common format such as CSV/Excel and your uploaded files]. [A reasonable fee may apply.]
+8.3 Before your data is deleted, you may ask us at accounts@fostercircle.com for an export of your Customer Data, in Excel or CSV format together with your uploaded files, free of charge.
 
 ## 9. Acceptable use
 
