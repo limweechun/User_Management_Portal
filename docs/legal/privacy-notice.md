@@ -63,7 +63,7 @@ Our service providers keep data on servers outside Malaysia, including in Singap
 
 ## 7. How long we keep it
 
-- **Account data:** kept while your account is active. When an account is closed, the data is kept for [2 years] for security and dispute records, then deleted or made anonymous.
+- **Account data:** kept while your account is active. When an account is closed, the data is kept for 2 years for security and dispute records, then deleted or made anonymous.
 - **Billing and receipt records:** kept for 7 years, as required for tax and company records.
 - **Customer data:** kept as described in our Terms of Service (section 8).
 
