@@ -90,7 +90,7 @@ Send requests to accounts@fostercircle.com. We will reply within 21 days. A fee 
 
 ## 10. Contact
 
-[Data Protection Officer name / title], Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: accounts@fostercircle.com. Phone: +603-2366 1288.
+Privacy contact: George Lim, Foster Circle Sdn Bhd, No. 2A-2, Jalan Equine 10B, Taman Equine, 43300 Seri Kembangan, Selangor. Email: accounts@fostercircle.com. Phone: +603-2366 1288.
 
 ## 11. Changes
 
