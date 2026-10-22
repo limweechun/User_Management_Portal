@@ -9,6 +9,7 @@ import { PersonalSettings } from '../components/PersonalSettings'
 import { usePlatformName, useSite } from '../lib/platform'
 import { MyTeam } from '../components/MyTeam'
 import { Subscription } from '../components/Subscription'
+import { GroupSignInPage } from '../components/GroupSignInPage'
 import { CompanySettings } from '../components/CompanySettings'
 import { SupportVisits } from '../components/SupportAccess'
 
@@ -265,7 +266,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
           ) : null}
           {activeCo && tab === 'team' ? <MyTeam key={activeCo.companyId} companyId={activeCo.companyId} onClose={() => setTab('apps')} inline /> : null}
           {activeCo && tab === 'subscription' ? <Subscription key={activeCo.companyId} companyId={activeCo.companyId} onClose={() => setTab('apps')} inline /> : null}
-          {activeCo && tab === 'company' ? <CompanySettings key={activeCo.companyId} companyId={activeCo.companyId} /> : null}
+          {activeCo && tab === 'company' ? <><CompanySettings key={activeCo.companyId} companyId={activeCo.companyId} /><GroupSignInPage key={'g' + activeCo.companyId} companyId={activeCo.companyId} /></> : null}
           {activeCo && tab === 'support' ? <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5"><SupportVisits key={activeCo.companyId} companyId={activeCo.companyId} /></div> : null}
           {!activeCo || tab === 'apps' ? <>
           <h1 className="mb-5 text-base font-medium text-slate-200">Your apps</h1>

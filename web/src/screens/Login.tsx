@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react'
-import { iam, type Branding } from '../lib/iam'
+import { iam, type Branding, type GroupPage } from '../lib/iam'
 import { useToast } from '../components/Toast'
 import { usePlatformName, useSelfSignup, useLegal } from '../lib/platform'
 
@@ -18,15 +18,20 @@ export function Login({
   resetToken,
   initialNotice,
   onAuthed,
+  group,
 }: {
   initialMode?: Mode
   resetToken?: string
   initialNotice?: string
   onAuthed: () => void
+  /** A customer group's own sign-in page (superlisting.net/<code>): its name and cover. */
+  group?: GroupPage
 }) {
   const platformName = usePlatformName()
   const selfSignup = useSelfSignup()
   const [companyName, setCompanyName] = useState('')
+  const [groupName, setGroupName] = useState('')
+  const groupCode = groupName.replace(/[^A-Za-z0-9]/g, '').toLowerCase()
   const legal = useLegal()
   const needsTerms = !!legal && selfSignup.on
   const [agree, setAgree] = useState(false)
@@ -45,8 +50,9 @@ export function Login({
   const [pi, setPi] = useState(0)
 
   useEffect(() => {
+    if (group) { setBranding({ ...group.branding, companyName: group.branding.companyName || group.name }); return }
     iam.getBranding().then(setBranding).catch(() => {})
-  }, [])
+  }, [group])
 
   const photos = branding.photoDataUrls || []
   useEffect(() => {
@@ -65,8 +71,8 @@ export function Login({
         await iam.login(email.trim(), password, remember)
         onAuthed()
       } else if (mode === 'register') {
-        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password, ...(selfSignup.on ? { companyName: companyName.trim() } : {}), ...(needsTerms ? { acceptTerms: agree } : {}) })
-        if (selfSignup.on) setNotice(`Your company is set up with a ${selfSignup.trialDays}-day free trial. Check your email for the verification link, then sign in.`)
+        const r = await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password, ...(selfSignup.on ? { companyName: companyName.trim(), groupName: groupName.trim() || companyName.trim() } : {}), ...(needsTerms ? { acceptTerms: agree } : {}) })
+        if (selfSignup.on) setNotice(`Your company is set up with a ${selfSignup.trialDays}-day free trial. Check your email for the verification link, then sign in.${r?.groupCode ? ` Your team signs in at ${location.host}/${r.groupCode}` : ''}`)
         else setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
       } else if (mode === 'forgot') {
@@ -139,6 +145,23 @@ export function Login({
           <div className="mt-5 space-y-3">
             {mode === 'register' ? (
               <>
+                {selfSignup.on ? (
+                  <>
+                  <Field icon={<Building2 className="h-4 w-4" />}>
+                    <input
+                      className={inputCls}
+                      placeholder="Group name (e.g. ABC Group)"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      required
+                      maxLength={80}
+                    />
+                  </Field>
+                  <p className="-mt-1.5 px-1 text-[11px] text-slate-500">
+                    {groupCode.length >= 3 ? <>Your team will sign in at <span className="text-emerald-300">{location.host}/{groupCode}</span></> : 'Your team signs in at an address made from this name.'}
+                  </p>
+                  </>
+                ) : null}
                 {selfSignup.on ? (
                   <Field icon={<Building2 className="h-4 w-4" />}>
                     <input
@@ -247,7 +270,9 @@ export function Login({
           </button>
 
           <div className="mt-5 text-center text-xs text-slate-400">
-            {mode === 'login' ? (
+            {mode === 'login' && group ? (
+              <>Not part of {group.name}? <a href="/" className="font-medium text-emerald-400 hover:text-emerald-300">Go to the home page</a></>
+            ) : mode === 'login' ? (
               <>
                 No account?{' '}
                 <button type="button" onClick={() => go('register')} className="font-medium text-emerald-400 hover:text-emerald-300">

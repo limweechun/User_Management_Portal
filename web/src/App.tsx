@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { SignInScreen } from './components/SignInScreen'
 import { usePlatformName, useSite } from './lib/platform'
 import { AccountLanding } from './screens/AccountLanding'
+import { GroupLogin } from './screens/GroupLogin'
 import { iam, canUsePortal, isSuperAdmin, type Me } from './lib/iam'
 import {
   resolveReturnTarget, resolveHandoffTarget, claimBounce, clearBounceGuard,
@@ -134,6 +135,11 @@ export function App() {
     )
   }
   // The subscription site (superlisting.net): signed-out visitors see the pricing page first.
+  // A customer group's sign-in page (2026-10-22): superlisting.net/<group code>.
+  const groupCode = site === 'account' ? location.pathname.replace(/^\/+|\/+$/g, '') : ''
+  if (phase === 'login' && !loginMode && /^[A-Za-z0-9]{3,40}$/.test(groupCode)) {
+    return <GroupLogin code={groupCode.toLowerCase()} initialNotice={loginNotice} onAuthed={toApp} />
+  }
   if (phase === 'login' && site === 'account' && !loginMode && !loginNotice) {
     return <AccountLanding onStart={() => setLoginMode('register')} onSignIn={() => setLoginMode('login')} />
   }

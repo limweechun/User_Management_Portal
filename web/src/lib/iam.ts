@@ -233,6 +233,9 @@ export interface Feedback {
   attachments?: FeedbackAttachment[]
 }
 
+/** A customer group's sign-in page (2026-10-22): superlisting.net/<code>. */
+export interface GroupPage { name: string; code: string; branding: { companyName: string; message: string; logoDataUrl: string; photoDataUrls: string[] } }
+
 export interface Branding {
   companyName?: string
   message?: string
@@ -244,7 +247,10 @@ export interface Branding {
 // ---- API surface ----
 export const iam = {
   // Auth
-  register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string; acceptTerms?: boolean }) => req('POST', '/auth/register', b),
+  register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string; acceptTerms?: boolean; groupName?: string }) => req<{ ok: boolean; groupCode?: string }>('POST', '/auth/register', b),
+  groupPage: (code: string) => req<GroupPage>('GET', `/groups/${encodeURIComponent(code)}`),
+  myGroup: (companyId: string) => req<GroupPage>('GET', `/team/${companyId}/group`),
+  saveGroup: (companyId: string, branding: GroupPage['branding']) => req('PUT', `/team/${companyId}/group`, { branding }),
   /** SaaS stage 3: free-trial status of my companies (empty when none is on a trial). */
   companyPlans: (companyId: string) => req<CompanyPlanRow[]>('GET', `/admin/companies/${companyId}/plans`),
   setCompanyPlan: (companyId: string, appId: string, b: { plan: string | null; extraUsers: number }) => req('PUT', `/admin/companies/${companyId}/plans/${appId}`, b),
