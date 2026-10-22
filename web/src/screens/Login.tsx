@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react'
 import { iam, type Branding } from '../lib/iam'
 import { useToast } from '../components/Toast'
-import { usePlatformName, useSelfSignup } from '../lib/platform'
+import { usePlatformName, useSelfSignup, useLegal } from '../lib/platform'
 
 type Mode = 'login' | 'register' | 'forgot' | 'reset'
 
@@ -27,6 +27,9 @@ export function Login({
   const platformName = usePlatformName()
   const selfSignup = useSelfSignup()
   const [companyName, setCompanyName] = useState('')
+  const legal = useLegal()
+  const needsTerms = !!legal && selfSignup.on
+  const [agree, setAgree] = useState(false)
   const { toast } = useToast()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [branding, setBranding] = useState<Branding>({})
@@ -62,7 +65,7 @@ export function Login({
         await iam.login(email.trim(), password, remember)
         onAuthed()
       } else if (mode === 'register') {
-        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password, ...(selfSignup.on ? { companyName: companyName.trim() } : {}) })
+        await iam.register({ email: email.trim(), fullName: fullName.trim().toUpperCase(), displayName: displayName.trim() || undefined, password, ...(selfSignup.on ? { companyName: companyName.trim() } : {}), ...(needsTerms ? { acceptTerms: agree } : {}) })
         if (selfSignup.on) setNotice(`Your company is set up with a ${selfSignup.trialDays}-day free trial. Check your email for the verification link, then sign in.`)
         else setNotice('Account created — check your email for the verification link, then sign in. An administrator will grant your app access.')
         setPassword(''); setMode('login')
@@ -222,9 +225,21 @@ export function Login({
             </div>
           ) : null}
 
+          {mode === 'register' && needsTerms ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-slate-400">
+              <input type="checkbox" required checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-emerald-500" />
+              <span>
+                I agree to the{' '}
+                <a href="/?legal=terms" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Terms of Service</a>
+                {' '}and{' '}
+                <a href="/?legal=privacy" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Privacy Notice</a>.
+              </span>
+            </label>
+          ) : null}
+
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (mode === 'register' && needsTerms && !agree)}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-xs font-medium text-slate-950 transition-all duration-200 hover:bg-emerald-400 disabled:opacity-60"
           >
             {busy ? 'Please wait…' : c.cta}

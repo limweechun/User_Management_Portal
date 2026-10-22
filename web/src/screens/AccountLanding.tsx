@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
-import { usePlatformName } from '../lib/platform'
+import { usePlatformName, useLegal } from '../lib/platform'
 
 /**
  * The SUBSCRIPTION site's front page (superlisting.net, signed out), 2026-10-13. Prices come
@@ -23,6 +23,7 @@ const BLURB: Record<string, string> = {
 
 export function AccountLanding({ onStart, onSignIn }: { onStart: () => void; onSignIn: () => void }) {
   const platformName = usePlatformName()
+  const legal = useLegal()
   const [prices, setPrices] = useState<Prices | null>(null)
   useEffect(() => {
     fetch('/api/v1/billing/prices', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then(setPrices).catch(() => setPrices(null))
@@ -90,7 +91,15 @@ export function AccountLanding({ onStart, onSignIn }: { onStart: () => void; onS
           </button>
         </div>
       </section>
-      <footer className="border-t border-slate-900 py-4 text-center text-[11px] text-slate-600">© {new Date().getFullYear()} {platformName}</footer>
+      <footer className="border-t border-slate-900 py-4 text-center text-[11px] text-slate-600">
+        © {new Date().getFullYear()} {platformName}
+        {legal ? (
+          <>
+            {' · '}<a href="/?legal=terms" className="hover:text-slate-300">Terms of Service</a>
+            {' · '}<a href="/?legal=privacy" className="hover:text-slate-300">Privacy Notice</a>
+          </>
+        ) : null}
+      </footer>
     </div>
   )
 }

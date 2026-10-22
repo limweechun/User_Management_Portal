@@ -244,7 +244,7 @@ export interface Branding {
 // ---- API surface ----
 export const iam = {
   // Auth
-  register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string }) => req('POST', '/auth/register', b),
+  register: (b: { email: string; fullName: string; displayName?: string; password: string; companyName?: string; acceptTerms?: boolean }) => req('POST', '/auth/register', b),
   /** SaaS stage 3: free-trial status of my companies (empty when none is on a trial). */
   companyPlans: (companyId: string) => req<CompanyPlanRow[]>('GET', `/admin/companies/${companyId}/plans`),
   setCompanyPlan: (companyId: string, appId: string, b: { plan: string | null; extraUsers: number }) => req('PUT', `/admin/companies/${companyId}/plans/${appId}`, b),

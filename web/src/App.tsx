@@ -10,6 +10,7 @@ import {
 import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
+import { Legal } from './screens/Legal'
 
 type Phase = 'booting' | 'login' | 'reset' | 'awaiting' | 'app'
 
@@ -124,6 +125,9 @@ export function App() {
   }
   const out = () => { signingOutNow = true; setPhase('booting'); return signOut().then(() => { setLoginNotice(SIGNED_OUT_NOTICE); setPhase('login') }) }
 
+  // Terms / Privacy (2026-10-22): public pages, shown before any sign-in decision.
+  const legalPage = new URLSearchParams(location.search).get('legal')
+  if (legalPage === 'terms' || legalPage === 'privacy') return <Legal page={legalPage} />
   if (phase === 'booting') {
     return (
       <BootScreen />
