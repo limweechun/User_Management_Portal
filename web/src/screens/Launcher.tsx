@@ -41,6 +41,22 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
   const [coId, setCoId] = useState<string | null>(null)
   const activeCo = customerCos.find((c) => c.companyId === coId) || customerCos[0] || null
   const internalTeams = teams.filter((t) => t.kind !== 'customer')
+  // "Add company" (2026-10-22): another company under the same login, subscribed from its own tab.
+  const [addingCo, setAddingCo] = useState(false)
+  const [newCoName, setNewCoName] = useState('')
+  const [addCoBusy, setAddCoBusy] = useState(false)
+  const [addCoErr, setAddCoErr] = useState('')
+  const addCompany = async () => {
+    setAddCoBusy(true); setAddCoErr('')
+    try {
+      const co = await iam.addCompany(newCoName.trim())
+      setTeams((ts) => [...ts, co])
+      setCoId(co.companyId); setTab('subscription')
+      setAddingCo(false); setNewCoName('')
+    } catch (e: any) {
+      setAddCoErr(e?.message || 'Could not add the company')
+    } finally { setAddCoBusy(false) }
+  }
   // One platform: my open support visits (platform team only; others get [] / 403 → nothing shown).
   const [visits, setVisits] = useState<{ id: string; companyName: string; expiresAt: string }[]>([])
   useEffect(() => {
@@ -168,7 +184,7 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
               className={`mb-4 rounded-lg border px-4 py-3 text-xs ${t.lapsed ? 'border-amber-500/40 bg-amber-500/10 text-amber-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'}`}
             >
               {t.lapsed
-                ? <>The free trial for <b>{t.name}</b> has ended, so its apps are closed. Subscribe to continue — your data is kept.</>
+                ? <>The apps for <b>{t.name}</b> are closed until it is subscribed. Open Subscription to continue — your data is kept.</>
                 : t.closedApps && t.closedApps.length
                   ? <>{t.name} does not subscribe to {t.closedApps.join(' and ')}, so {t.closedApps.length === 1 ? 'it is' : 'they are'} closed. Add {t.closedApps.length === 1 ? 'it' : 'them'} in Subscription — your data is kept.</>
                 : t.daysLeft != null
@@ -215,12 +231,36 @@ export function Launcher({ onSignOut, onOpenAdmin }: { onSignOut: () => void; on
                   {customerCos.map((c) => <option key={c.companyId} value={c.companyId}>{c.name}</option>)}
                 </select>
               ) : <span className="mr-2 text-xs font-medium text-slate-300">{activeCo.name}</span>}
+              <button onClick={() => { setAddingCo(true); setAddCoErr('') }} title="Set up another company under this login"
+                className="mr-2 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800">+ Add company</button>
               {([['apps', 'Apps'], ['team', 'Team'], ['subscription', 'Subscription'], ['company', 'Company settings'], ['support', 'Support visits']] as [Tab, string][]).map(([id, label]) => (
                 <button key={id} onClick={() => setTab(id)}
                   className={'rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ' + (tab === id ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200')}>
                   {label}
                 </button>
               ))}
+            </div>
+          ) : null}
+          {addingCo ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md" onClick={() => !addCoBusy && setAddingCo(false)} />
+              <form onSubmit={(e) => { e.preventDefault(); if (newCoName.trim()) addCompany() }}
+                className="relative z-10 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl">
+                <div className="mb-1 text-sm font-medium text-slate-100">Add a company</div>
+                <p className="mb-3 text-xs leading-relaxed text-slate-400">
+                  A separate company under your login, with its own team, data, subscription and receipts.
+                  It has no free trial: its apps open once you subscribe it.
+                </p>
+                <input autoFocus value={newCoName} onChange={(e) => setNewCoName(e.target.value)} maxLength={120} placeholder="Company name, e.g. ABC TRADING SDN BHD"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none" />
+                {addCoErr ? <div className="mt-2 text-xs text-rose-300">{addCoErr}</div> : null}
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setAddingCo(false)} disabled={addCoBusy} className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800">Cancel</button>
+                  <button type="submit" disabled={addCoBusy || !newCoName.trim()} className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+                    {addCoBusy ? 'Adding…' : 'Add company'}
+                  </button>
+                </div>
+              </form>
             </div>
           ) : null}
           {activeCo && tab === 'team' ? <MyTeam key={activeCo.companyId} companyId={activeCo.companyId} onClose={() => setTab('apps')} inline /> : null}

@@ -260,6 +260,7 @@ export const iam = {
   companyProfile: (companyId: string) => req<CompanyProfile>('GET', `/team/${companyId}/company`),
   saveCompanyProfile: (companyId: string, b: Partial<CompanyProfile>) => req('PUT', `/team/${companyId}/company`, b),
   myTeams: () => req<{ companyId: string; name: string; kind?: string }[]>('GET', '/team'),
+  addCompany: (name: string) => req<{ companyId: string; name: string; kind: string }>('POST', '/team/companies', { name }),
   team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
   teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),
   teamUpdate: (companyId: string, userId: string, grants: Grant[]) => req('PUT', `/team/${companyId}/members/${userId}`, { grants }),
