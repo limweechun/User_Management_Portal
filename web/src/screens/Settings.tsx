@@ -72,6 +72,15 @@ function GeneralTab() {
   const [currency, setCurrency] = useState('USD ($)')
   const [language, setLanguage] = useState('English')
   const [savingBrand, setSavingBrand] = useState(false)
+  // Two login pages (2026-10-22): the owner's own site, and the subscription site's cover.
+  type BrandKey = 'login_branding' | 'platform_branding'
+  const [brandKey, setBrandKey] = useState<BrandKey>('login_branding')
+  const [allBrands, setAllBrands] = useState<Record<string, any>>({})
+  const showBrand = (b: Record<string, any>) => {
+    setCompanyName(b.companyName || ''); setMessage(b.message || ''); setLogoDataUrl(b.logoDataUrl || '')
+    setPhotos(Array.isArray(b.photoDataUrls) ? b.photoDataUrls : [])
+  }
+  const pickBrand = (k: BrandKey) => { setBrandKey(k); showBrand(allBrands[k] || {}) }
   const [savingPrefs, setSavingPrefs] = useState(false)
 
   useEffect(() => {
@@ -81,6 +90,7 @@ function GeneralTab() {
         const s = await iam.loadSettings()
         if (!alive) return
         const b = (s.login_branding || {}) as Record<string, any>
+        setAllBrands({ login_branding: b, platform_branding: (s.platform_branding || {}) as Record<string, any> })
         const g = (s.general_prefs || {}) as Record<string, any>
         setCompanyName(b.companyName || '')
         setMessage(b.message || '')
@@ -104,12 +114,9 @@ function GeneralTab() {
   const saveBranding = async () => {
     setSavingBrand(true)
     try {
-      await iam.saveSetting('login_branding', {
-        companyName: companyName.trim(),
-        message: message.trim(),
-        logoDataUrl,
-        photoDataUrls: photos,
-      })
+      const value = { companyName: companyName.trim(), message: message.trim(), logoDataUrl, photoDataUrls: photos }
+      await iam.saveSetting(brandKey, value)
+      setAllBrands((a) => ({ ...a, [brandKey]: value }))
       toast('Saved', 'ok')
     } catch (e: any) {
       toast(e?.message || 'Save failed', 'bad')
@@ -171,7 +178,18 @@ function GeneralTab() {
   return (
     <div className="flex flex-col gap-4">
       <section className={CARD}>
-        <h3 className="mb-3 text-xs font-semibold text-slate-200">Login page branding</h3>
+        <h3 className="mb-2 text-xs font-semibold text-slate-200">Login page branding</h3>
+        <div role="group" aria-label="Which login page" className="mb-3 inline-flex flex-wrap overflow-hidden rounded-lg border border-slate-700 text-[11px]">
+          {([['login_branding', 'Your company site (e.g. demi.true-eco.com)'], ['platform_branding', 'Subscription site (superlisting.net)']] as [BrandKey, string][]).map(([k, label]) => (
+            <button key={k} type="button" onClick={() => pickBrand(k)} aria-pressed={brandKey === k}
+              className={'px-3 py-1.5 ' + (brandKey === k ? 'bg-emerald-500/15 font-semibold text-emerald-300' : 'text-slate-400 hover:bg-slate-800')}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {brandKey === 'platform_branding' ? (
+          <p className="mb-3 text-[11px] text-slate-400">The sign-in page customers see on the subscription site. Left empty, it shows the platform name only — never your company's photos.</p>
+        ) : null}
         <div className="grid grid-cols-1 gap-3">
           <Field label="Login page company name">
             <input
