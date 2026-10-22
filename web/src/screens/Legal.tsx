@@ -63,9 +63,9 @@ export function Legal({ page }: { page: LegalPage }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300">
       <header className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-4">
-        <a href="/" className="text-sm font-semibold text-slate-200 hover:text-white">← {platformName || 'Home'}</a>
+        <a href={location.pathname} className="text-sm font-semibold text-slate-200 hover:text-white">← {platformName || 'Home'}</a>
         <div className="flex items-center gap-3 text-xs">
-          <a href={`/?legal=${other}`} className="text-emerald-300 hover:underline">{label(other)}</a>
+          <a href={`?legal=${other}`} className="text-emerald-300 hover:underline">{label(other)}</a>
           <div role="group" aria-label="Language" className="inline-flex overflow-hidden rounded-full border border-slate-700">
             {(['en', 'ms'] as const).map((l) => (
               <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l}

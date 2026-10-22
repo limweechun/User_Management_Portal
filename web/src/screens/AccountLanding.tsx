@@ -95,8 +95,8 @@ export function AccountLanding({ onStart, onSignIn }: { onStart: () => void; onS
         © {new Date().getFullYear()} {platformName}
         {legal ? (
           <>
-            {' · '}<a href="/?legal=terms" className="hover:text-slate-300">Terms of Service</a>
-            {' · '}<a href="/?legal=privacy" className="hover:text-slate-300">Privacy Notice</a>
+            {' · '}<a href="?legal=terms" className="hover:text-slate-300">Terms of Service</a>
+            {' · '}<a href="?legal=privacy" className="hover:text-slate-300">Privacy Notice</a>
           </>
         ) : null}
       </footer>

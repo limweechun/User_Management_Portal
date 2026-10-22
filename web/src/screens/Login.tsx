@@ -230,9 +230,9 @@ export function Login({
               <input type="checkbox" required checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-emerald-500" />
               <span>
                 I agree to the{' '}
-                <a href="/?legal=terms" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Terms of Service</a>
+                <a href="?legal=terms" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Terms of Service</a>
                 {' '}and{' '}
-                <a href="/?legal=privacy" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Privacy Notice</a>.
+                <a href="?legal=privacy" target="_blank" rel="noopener" className="font-medium text-emerald-400 hover:text-emerald-300">Privacy Notice</a>.
               </span>
             </label>
           ) : null}
