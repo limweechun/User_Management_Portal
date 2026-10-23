@@ -57,7 +57,7 @@ Kami berkongsi data peribadi hanya dengan:
 
 ## 6. Pemindahan ke luar Malaysia
 
-Pembekal perkhidmatan kami menyimpan data di pelayan di luar Malaysia, iaitu di Singapura, Australia (Sydney) dan Jepun (Tokyo). Kami memindahkan data hanya sebagaimana yang dibenarkan oleh APDP dan mengambil langkah supaya data dilindungi pada tahap yang setara dengan APDP.
+Pembekal perkhidmatan kami menyimpan data di pelayan di luar Malaysia, iaitu di Singapura. Kami memindahkan data hanya sebagaimana yang dibenarkan oleh APDP dan mengambil langkah supaya data dilindungi pada tahap yang setara dengan APDP.
 
 ## 7. Berapa lama kami menyimpannya
 

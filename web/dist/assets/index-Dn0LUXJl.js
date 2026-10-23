@@ -860,7 +860,7 @@ We share personal data only with:
 
 ## 6. Transfer outside Malaysia
 
-Our service providers keep data on servers outside Malaysia, in Singapore, Australia (Sydney) and Japan (Tokyo). We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
+Our service providers keep data on servers outside Malaysia, in Singapore. We transfer data only as allowed by the PDPA and take steps so that it is protected to a standard similar to the PDPA.
 
 ## 7. How long we keep it
 
@@ -956,7 +956,7 @@ Kami berkongsi data peribadi hanya dengan:
 
 ## 6. Pemindahan ke luar Malaysia
 
-Pembekal perkhidmatan kami menyimpan data di pelayan di luar Malaysia, iaitu di Singapura, Australia (Sydney) dan Jepun (Tokyo). Kami memindahkan data hanya sebagaimana yang dibenarkan oleh APDP dan mengambil langkah supaya data dilindungi pada tahap yang setara dengan APDP.
+Pembekal perkhidmatan kami menyimpan data di pelayan di luar Malaysia, iaitu di Singapura. Kami memindahkan data hanya sebagaimana yang dibenarkan oleh APDP dan mengambil langkah supaya data dilindungi pada tahap yang setara dengan APDP.
 
 ## 7. Berapa lama kami menyimpannya
 
