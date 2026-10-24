@@ -12,8 +12,9 @@ import { useSession } from './context/SessionContext'
 import { Login } from './screens/Login'
 import { Home } from './screens/Home'
 import { Legal } from './screens/Legal'
+import { ChangePasswordFirst } from './screens/ChangePasswordFirst'
 
-type Phase = 'booting' | 'login' | 'reset' | 'awaiting' | 'app'
+type Phase = 'booting' | 'login' | 'reset' | 'awaiting' | 'newpassword' | 'app'
 
 // When a bounce is refused we fall through to the launcher — but the address bar still says
 // ?return=<the app that keeps 401ing>. That makes the rescue landing page unstable: any reload, tab
@@ -100,6 +101,8 @@ export function App() {
       const m = await refresh()
       if (!m) { setPhase('login'); return }
       if (m.status === 'pending') { setPhase('awaiting'); return }
+      // A temporary password is replaced before anything else, even an app's sign-in hand-off.
+      if (m.user.mustChangePassword) { setPhase('newpassword'); return }
       // SSO deep-link: an app sent us here to sign in (?return=<deep-link> or a
       // ?redirect_uri token handoff). Already authed → bounce straight back into the app
       // instead of dead-ending on the launcher. (Legacy app.js init() at :115-116.)
@@ -116,6 +119,7 @@ export function App() {
     const m = await refresh()
     if (!m) { setPhase('login'); return }
     if (m.status === 'pending') { setPhase('awaiting'); return }
+    if (m.user.mustChangePassword) { setPhase('newpassword'); return }
     // Same SSO return, on the login-success path (legacy app.js routeAuthed() at :195-196):
     // if an app handed us a ?redirect_uri or ?return, go there rather than the launcher — same
     // flicker guard, so a fresh login always gets its first bounce but an instant bounce-back
@@ -136,7 +140,9 @@ export function App() {
   }
   // The subscription site (superlisting.net): signed-out visitors see the pricing page first.
   // A customer group's sign-in page (2026-10-22): superlisting.net/<group code>.
-  const groupCode = site === 'account' ? location.pathname.replace(/^\/+|\/+$/g, '') : ''
+  // The portal's own mount (/portal/) is never a group's address.
+  const pathCode = site === 'account' ? location.pathname.replace(/^\/+|\/+$/g, '') : ''
+  const groupCode = pathCode.toLowerCase() === 'portal' ? '' : pathCode
   if (phase === 'login' && !loginMode && /^[A-Za-z0-9]{3,40}$/.test(groupCode)) {
     return <GroupLogin code={groupCode.toLowerCase()} initialNotice={loginNotice} onAuthed={toApp} />
   }
@@ -147,6 +153,9 @@ export function App() {
   if (phase === 'login' || phase === 'reset') {
     if (phase === 'login' && loginMode) return <Login key={loginMode} initialMode={loginMode} initialNotice={loginNotice} onAuthed={toApp} />
     return <Login initialMode={phase === 'reset' ? 'reset' : 'login'} resetToken={resetToken} initialNotice={loginNotice} onAuthed={toApp} />
+  }
+  if (phase === 'newpassword') {
+    return <ChangePasswordFirst name={me?.user.displayName || me?.user.fullName || ''} onDone={toApp} onSignOut={out} />
   }
   if (phase === 'awaiting') {
     return (

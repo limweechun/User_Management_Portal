@@ -21,7 +21,7 @@ async function req<T = any>(method: string, path: string, body?: unknown): Promi
 // ---- SaaS stage 4: plans + My team ----
 export interface CompanyPlanRow { appId: string; appName: string; plan: string | null; extraUsers: number; extraUsersAllowed: boolean; seats: number | null; used: number }
 export interface TeamApp { appId: string; name: string; plan: string | null; planLabel: string | null; seats: number | null; used: number; roles: { name: string; label: string }[] }
-export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
+export interface TeamMember { id: string; email: string; fullName: string; displayName?: string | null; userCode?: string | null; status?: string; mustChangePassword?: boolean; emailVerified?: boolean; apps: { appId: string; role: string; isAppAdmin: boolean }[] }
 export interface TeamView { company: { id: string; name: string }; apps: TeamApp[]; members: TeamMember[]; me: string }
 type Grant = { appId: string; role: string }
 /** The customer's own company profile (customer portal, 2026-10-14). */
@@ -88,6 +88,8 @@ export interface MeUser {
   platformRole: PlatformRole
   notifyInApp?: boolean
   notifyEmail?: boolean
+  /** A temporary password from an administrator: the portal asks for a new one first (2026-10-24). */
+  mustChangePassword?: boolean
 }
 
 export interface Me {
@@ -269,7 +271,11 @@ export const iam = {
   myTeams: () => req<{ companyId: string; name: string; kind?: string }[]>('GET', '/team'),
   addCompany: (name: string) => req<{ companyId: string; name: string; kind: string }>('POST', '/team/companies', { name }),
   team: (companyId: string) => req<TeamView>('GET', `/team/${companyId}`),
-  teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; grants: Grant[] }) => req('POST', `/team/${companyId}/members`, b),
+  teamAdd: (companyId: string, b: { email: string; fullName: string; password?: string; mode?: 'password' | 'invite'; grants: Grant[] }) =>
+    req<{ ok: boolean; userId: string; invited?: boolean; emailed?: boolean; link?: string }>('POST', `/team/${companyId}/members`, b),
+  teamPassword: (companyId: string, userId: string, b: { mode: 'temporary' | 'email'; password?: string }) =>
+    req<{ ok: boolean; emailed?: boolean; link?: string }>('POST', `/team/${companyId}/members/${userId}/password`, b),
+  teamStatus: (companyId: string, userId: string, active: boolean) => req('POST', `/team/${companyId}/members/${userId}/status`, { active }),
   teamUpdate: (companyId: string, userId: string, grants: Grant[]) => req('PUT', `/team/${companyId}/members/${userId}`, { grants }),
   teamRemove: (companyId: string, userId: string) => req('DELETE', `/team/${companyId}/members/${userId}`),
   myTrial: () => req<{ companies: { companyId: string; name: string; daysLeft: number | null; lapsed: boolean; closedApps?: string[] }[] }>('GET', '/me/trial'),
