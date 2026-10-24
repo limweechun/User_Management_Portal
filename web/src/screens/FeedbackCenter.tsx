@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { MessageSquare, Inbox, Eye, CheckCircle, Search, Download, Paperclip } from 'lucide-react'
+import { MessageSquare, Inbox, Eye, CheckCircle, Search, Download, Paperclip, X, ExternalLink } from 'lucide-react'
 import { iam, type Feedback, type App } from '../lib/iam'
 import { useToast } from '../components/Toast'
 import { StyledSelect } from '../components/StyledSelect'
@@ -17,6 +17,15 @@ const fmtSize = (n: number) => (n >= 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) 
 export function FeedbackCenter() {
   const { toast } = useToast()
   const [apps, setApps] = useState<App[]>([])
+  // Attachments open in a viewer ON the page, with a Close button (owner report 2026-10-24: a new
+  // tab has no way back in the installed app window, which has no tab bar).
+  const [viewing, setViewing] = useState<{ url: string; name: string; mime: string } | null>(null)
+  useEffect(() => {
+    if (!viewing) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewing(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [viewing])
   const [rows, setRows] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -259,17 +268,16 @@ export function FeedbackCenter() {
                 <div className="text-[10px] uppercase tracking-wide text-slate-400">Attachments ({detail.attachments.length})</div>
                 <div className="mt-1.5 space-y-1">
                   {detail.attachments.map((a) => (
-                    <a
+                    <button
                       key={a.id}
-                      href={iam.feedbackAttachmentUrl(detail.id, a.id)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-200 transition-all duration-200 hover:border-emerald-500/40 hover:bg-slate-800"
+                      type="button"
+                      onClick={() => setViewing({ url: iam.feedbackAttachmentUrl(detail.id, a.id), name: a.name, mime: a.mime || '' })}
+                      className="flex w-full items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2 text-left text-xs text-slate-200 transition-all duration-200 hover:border-emerald-500/40 hover:bg-slate-800"
                     >
                       <Paperclip className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                       <span className="min-w-0 flex-1 truncate">{a.name}</span>
                       <span className="shrink-0 text-[10px] text-slate-500">{fmtSize(a.size)}</span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -277,6 +285,33 @@ export function FeedbackCenter() {
           </div>
         ) : null}
       </Drawer>
+      {viewing ? (
+        <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950/90 backdrop-blur-sm" role="dialog" aria-label={viewing.name}>
+          <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2.5">
+            <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{viewing.name}</span>
+            <a href={viewing.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800">
+              <ExternalLink className="h-3.5 w-3.5" /> Open in new tab
+            </a>
+            <a href={viewing.url} download={viewing.name} className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800">
+              <Download className="h-3.5 w-3.5" /> Download
+            </a>
+            <button type="button" onClick={() => setViewing(null)} autoFocus
+              className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-emerald-400">
+              <X className="h-3.5 w-3.5" /> Close
+            </button>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4" onClick={(e) => { if (e.target === e.currentTarget) setViewing(null) }}>
+            {viewing.mime.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(viewing.name) ? (
+              <img src={viewing.url} alt={viewing.name} className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+            ) : (
+              <div className="text-center text-xs text-slate-300">
+                <p>This file type can't be shown here.</p>
+                <p className="mt-1 text-slate-500">Use Download or Open in new tab above.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
