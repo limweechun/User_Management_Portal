@@ -10,7 +10,7 @@ import { useToast } from './Toast'
  */
 type Field = Exclude<keyof CompanyProfile, 'logo' | 'stamp' | 'companyCode'>
 const EMPTY: Record<Field, string> = {
-  name: '', regNo: '', sstNo: '', address: '', address2: '', postcode: '', city: '', state: '', email: '', phone: '',
+  name: '', regNo: '', sstNo: '', address: '', address2: '', postcode: '', city: '', state: '', country: '', email: '', phone: '',
   faxNo: '', whatsappNo: '', website: '', bankName: '', bankAccountName: '', bankAccountNo: '',
 }
 
@@ -95,11 +95,14 @@ export function CompanySettings({ companyId }: { companyId: string }) {
             <Input label="SSM registration no." value={f.regNo} onChange={set('regNo')} />
             <Input label="SST registration no." value={f.sstNo} onChange={set('sstNo')} />
           </div>
-          <Input label="Address line 1" value={f.address} onChange={set('address')} />
-          <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Address line 1" value={f.address} onChange={set('address')} />
+            <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Input label="City" value={f.city} onChange={set('city')} />
             <Input label="State" value={f.state} onChange={set('state')} />
+            <Input label="Country" value={f.country} onChange={set('country')} />
             <Input label="Postcode" value={f.postcode} onChange={set('postcode')} />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

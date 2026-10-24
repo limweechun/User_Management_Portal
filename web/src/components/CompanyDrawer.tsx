@@ -7,7 +7,7 @@ import { SupportAccess } from './SupportAccess'
 import { useSelfSignup } from '../lib/platform'
 
 const EMPTY_FORM = {
-  name: '', regNo: '', sstNo: '', email: '', phone: '', faxNo: '', whatsappNo: '', address: '', address2: '', city: '', state: '', postcode: '',
+  name: '', regNo: '', sstNo: '', email: '', phone: '', faxNo: '', whatsappNo: '', address: '', address2: '', city: '', state: '', country: '', postcode: '',
   website: '', epfNo: '', socsoNo: '', eisNo: '', incomeTaxNo: '',
   bankName: '', bankAccountName: '', bankAccountNo: '',
 }
@@ -17,7 +17,7 @@ function fromCompany(c: Company): typeof EMPTY_FORM {
   return {
     name: c.name || '', regNo: c.regNo || '', sstNo: c.sstNo || '', email: c.email || '', phone: c.phone || '',
     faxNo: c.faxNo || '', whatsappNo: c.whatsappNo || '',
-    address: c.address || '', address2: c.address2 || '', city: c.city || '', state: c.state || '',
+    address: c.address || '', address2: c.address2 || '', city: c.city || '', state: c.state || '', country: c.country || '',
     postcode: c.postcode || '', website: c.website || '',
     epfNo: c.epfNo || '', socsoNo: c.socsoNo || '', eisNo: c.eisNo || '', incomeTaxNo: c.incomeTaxNo || '',
     bankName: c.bankName || '', bankAccountName: c.bankAccountName || '', bankAccountNo: c.bankAccountNo || '',
@@ -213,11 +213,15 @@ export function CompanyDrawer({
               <Input label="WhatsApp no." value={f.whatsappNo} onChange={set('whatsappNo')} />
               <Input label="Fax no." value={f.faxNo} onChange={set('faxNo')} />
             </div>
-            <Input label="Address line 1" value={f.address} onChange={set('address')} />
-            <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
-            <div className="grid grid-cols-3 gap-3">
+            {/* Address lines side by side; City / State / Country / Postcode on one row (owner ask 2026-10-24). */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input label="Address line 1" value={f.address} onChange={set('address')} />
+              <Input label="Address line 2" value={f.address2} onChange={set('address2')} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Input label="City" value={f.city} onChange={set('city')} />
               <Input label="State" value={f.state} onChange={set('state')} />
+              <Input label="Country" value={f.country} onChange={set('country')} />
               <Input label="Postcode" value={f.postcode} onChange={set('postcode')} />
             </div>
             <Input label="Website" value={f.website} onChange={set('website')} />

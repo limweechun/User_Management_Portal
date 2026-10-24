@@ -27,7 +27,7 @@ type Grant = { appId: string; role: string }
 /** The customer's own company profile (customer portal, 2026-10-14). */
 export interface CompanyProfile {
   name: string; companyCode?: string | null; regNo?: string | null; sstNo?: string | null; address?: string | null; address2?: string | null
-  postcode?: string | null; city?: string | null; state?: string | null; email?: string | null; phone?: string | null; faxNo?: string | null
+  postcode?: string | null; city?: string | null; state?: string | null; country?: string | null; email?: string | null; phone?: string | null; faxNo?: string | null
   whatsappNo?: string | null; website?: string | null; bankName?: string | null; bankAccountName?: string | null; bankAccountNo?: string | null
   logo?: string | null; stamp?: string | null
 }
@@ -143,6 +143,7 @@ export interface Company {
   postcode?: string | null
   city?: string | null
   state?: string | null
+  country?: string | null
   email?: string | null
   phone?: string | null
   website?: string | null
