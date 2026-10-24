@@ -3,7 +3,7 @@
  * a new window, ready to print or save as PDF. The seller is the platform operator's own company
  * (its portal profile: name, numbers, address, logo); the buyer is the customer's company.
  */
-type Party = { name?: string; regNo?: string | null; sstNo?: string | null; address?: string | null; address2?: string | null; postcode?: string | null; city?: string | null; state?: string | null; email?: string | null; phone?: string | null; logo?: string | null }
+type Party = { name?: string; regNo?: string | null; sstNo?: string | null; address?: string | null; address2?: string | null; postcode?: string | null; city?: string | null; state?: string | null; country?: string | null; email?: string | null; phone?: string | null; logo?: string | null }
 export type Receipt = {
   receiptNo: string; paidAt: string | null; amountSen: number; period: string; billId: string | null
   lines: { label: string; amountSen: number }[]; seller: Party | null; sellerName: string; buyer: Party; platformName: string
@@ -11,7 +11,7 @@ export type Receipt = {
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 const rm = (sen: number) => 'RM ' + (sen / 100).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const addr = (p: Party) => [p.address, p.address2, [p.postcode, p.city].filter(Boolean).join(' '), p.state].filter(Boolean).join(', ')
+const addr = (p: Party) => [p.address, p.address2, [p.postcode, p.city].filter(Boolean).join(' '), p.state, p.address || p.city ? (p.country || 'Malaysia') : ''].filter(Boolean).join(', ')
 
 export function receiptHtml(r: Receipt): string {
   const s = r.seller || {}
